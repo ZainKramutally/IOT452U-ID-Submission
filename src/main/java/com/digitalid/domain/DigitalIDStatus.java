@@ -4,7 +4,7 @@ public enum DigitalIDStatus {
     ACTIVE {
         @Override
         public boolean canTransitionTo(DigitalIDStatus next) {
-            return next == ACTIVE || next == SUSPENDED || next == REVOKED;
+            return next == SUSPENDED || next == REVOKED;
         }
     },
     SUSPENDED {
