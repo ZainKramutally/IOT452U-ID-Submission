@@ -2,8 +2,7 @@ package com.digitalid.repository;
 
 import com.digitalid.domain.DigitalID;
 
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class InMemoryIdentityRepository implements IdentityRepository {
@@ -22,6 +21,11 @@ public class InMemoryIdentityRepository implements IdentityRepository {
     @Override
     public boolean exists(String id) {
         return store.containsKey(id);
+    }
+
+    @Override
+    public List<DigitalID> findAll() {
+        return List.copyOf(store.values());
     }
 }
 
