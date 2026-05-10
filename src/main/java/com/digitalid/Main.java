@@ -16,8 +16,6 @@ import java.time.LocalDate;
 
 public class Main {
     public static void main(String[] args) {
-
-        // TEST FOR CI PIPELINE
         InMemoryIdentityRepository repository = new InMemoryIdentityRepository();
         AuditLog auditLog = new AuditLog();
 
