@@ -34,6 +34,7 @@ class DigitalIDTest {
         assertEquals(dob, digitalID.getDateOfBirth());
         assertTrue(digitalID.isRestricted());
     }
+
     @Test
     void newIdentityDefaultsToActiveWithOneHistoryEntry() {
         DigitalID digitalID = new DigitalID("ID-3", "Alex Smith", LocalDate.of(1990, 5, 1));
