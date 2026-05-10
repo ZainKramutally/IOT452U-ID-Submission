@@ -42,15 +42,26 @@ public class ManagementServiceImpl implements ManagementService {
     }
 
     @Override
-    public DigitalID changeStatus(String id, DigitalIDStatus status, OrganisationType actor) {
+    public DigitalID changeStatus(String id, DigitalIDStatus newStatus, OrganisationType actor) {
         ensureCentralAuthority(actor);
         DigitalID digitalID = loadIdentity(id);
-        if (digitalID.getStatus() == DigitalIDStatus.REVOKED && status != DigitalIDStatus.REVOKED) {
-            throw new IllegalStateException("Cannot change status after revocation: " + id);
+
+        if (digitalID.getStatus() == newStatus) {
+            // return without recording a change if there is no status change
+            auditLog.record("CHANGE_STATUS_NO_OP", "id=" + id + ",status=" + newStatus);
+            return digitalID;
         }
-        digitalID.recordStatusChange(status);
+
+        if (!digitalID.getStatus().canTransitionTo(newStatus)) {
+            auditLog.record("CHANGE_STATUS_REJECTED", "id=" + id + ",from=" + digitalID.getStatus() + ",to=" + newStatus);
+            throw new IllegalStateException(
+                    "Invalid status transition from " + digitalID.getStatus() + " to " + newStatus + " for id: " + id
+            );
+        }
+
+        digitalID.recordStatusChange(newStatus);
         repository.save(digitalID);
-        auditLog.record("CHANGE_STATUS", "id=" + id + ",status=" + status);
+        auditLog.record("CHANGE_STATUS", "id=" + id + ",from=" + digitalID.getStatus() + ",to=" + newStatus);
         return digitalID;
     }
 
