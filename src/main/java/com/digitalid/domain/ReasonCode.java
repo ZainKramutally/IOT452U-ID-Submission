@@ -6,6 +6,5 @@ public enum ReasonCode {
     INACTIVE,
     RESTRICTED,
     NOT_FOUND,
-    SUSPENDED_DURING_PERIOD,
-    REVOKED
+    SUSPENDED_DURING_PERIOD
 }

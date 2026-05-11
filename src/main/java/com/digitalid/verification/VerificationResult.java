@@ -21,16 +21,4 @@ public record VerificationResult(boolean exists, boolean valid, ReasonCode reaso
                 ", detail='" + detail + '\'' +
                 '}';
     }
-
-    public String getDetail() {
-        return detail;
-    }
-
-    public ReasonCode getReason() {
-        return reason;
-    }
-
-    public boolean isValid() {
-        return valid;
-    }
 }
