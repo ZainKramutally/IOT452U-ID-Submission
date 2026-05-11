@@ -2,7 +2,9 @@ package com.digitalid.repository;
 
 import com.digitalid.domain.DigitalID;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class InMemoryIdentityRepository implements IdentityRepository {
