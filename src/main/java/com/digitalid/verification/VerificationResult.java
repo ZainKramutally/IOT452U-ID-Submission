@@ -26,11 +26,11 @@ public record VerificationResult(boolean exists, boolean valid, ReasonCode reaso
         return detail;
     }
 
-    public String getReason() {
-        return reason.name();
+    public ReasonCode getReason() {
+        return reason;
     }
 
-    public String isValid() {
-        return Boolean.toString(valid);
+    public boolean isValid() {
+        return valid;
     }
 }
