@@ -56,7 +56,8 @@ mvn verify
 Run the console demonstration:
 
 ```sh
-mvn compile exec:java -Dexec.mainClass="com.digitalid.Main"
+mvn compile
+java -cp target/classes com.digitalid.Main
 ```
 
 View the JaCoCo coverage report by opening `target/site/jacoco/index.html` in a browser after running `mvn verify`.
@@ -233,3 +234,47 @@ The test suite covers the following areas across four test classes:
 - Timezone-safe date handling using UTC consistently
 
 Tests are written using JUnit 5 with `@BeforeEach` setup and descriptive method names that clearly state what each test verifies.
+
+---
+
+## Architecture Diagram
+
+```text
+                       +----------------------+
+                       |  Central Authority   |
+                       +----------+-----------+
+                                  |
+                                  v
+                        +-------------------+
+                        | ManagementService |
+                        +---------+---------+
+                                  |
+                 +----------------+----------------+
+                 |                                 |
+                 v                                 v
+      +----------------------+          +-------------------+
+      | IdentityRepository   |          |     AuditLog      |
+      +----------+-----------+          +-------------------+
+                 |
+                 v
+          +-------------+
+          | DigitalID   |
+          +-------------+
+
+                       +----------------------+
+                       | Consuming Orgs       |
+                       | (Employer/Bank/etc.) |
+                       +----------+-----------+
+                                  |
+                                  v
+                        +-------------------+
+                        | VerificationService|
+                        +---------+---------+
+                                  |
+                 +----------------+----------------+
+                 |                                 |
+                 v                                 v
+      +----------------------+          +-------------------+
+      | IdentityRepository   |          |     AuditLog      |
+      +----------------------+          +-------------------+
+```

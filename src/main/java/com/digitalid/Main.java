@@ -119,8 +119,9 @@ public class Main {
         System.out.println("\nApplying an expired restriction on ID-1002...");
         management.setRestricted("ID-1002", true, "EXPIRED_TEST", TODAY_UTC.minusDays(1),
                 OrganisationType.CENTRAL_AUTHORITY);
-        System.out.println("Restricted (should be false): "
+        System.out.println("Restricted: "
                 + repository.findById("ID-1002").orElseThrow().isRestricted());
+        System.out.println("(Expected: restriction expired because expiry date is in the past)");
 
         System.out.println("\nAttempting restriction with missing expiry (should fail)...");
         try {
@@ -200,9 +201,17 @@ public class Main {
         // SECTION 7 : VERIFICATION: TAX AUTHORITY
         printHeader("SECTION 7 : VERIFICATION: TAX AUTHORITY");
 
-        // Set up a dedicated identity for tax authority period check scenarios
-        management.createIdentity("ID-2001", "David Lee",
-                LocalDate.of(1982, 4, 10), OrganisationType.CENTRAL_AUTHORITY);
+        System.out.println("Creating a suspension that overlaps the reporting period boundary...");
+        management.changeStatus("ID-1001", DigitalIDStatus.SUSPENDED, OrganisationType.CENTRAL_AUTHORITY);
+        System.out.println("(Suspended today; period starts two days ago and overlaps this suspension)");
+        printResult(verification.verify(
+                new VerificationRequest("ID-1001", OrganisationType.TAX_AUTHORITY,
+                        TODAY_UTC.minusDays(2), TODAY_UTC.plusDays(2))
+        ));
+
+        System.out.println("\nReinstating ID-1001 back to ACTIVE...");
+        management.changeStatus("ID-1001", DigitalIDStatus.ACTIVE, OrganisationType.CENTRAL_AUTHORITY);
+        System.out.println("Status: " + repository.findById("ID-1001").orElseThrow().getStatus());
 
         System.out.println("TAX_AUTHORITY verifying active identity ID-2001 with no suspensions in period...");
         printResult(verification.verify(
