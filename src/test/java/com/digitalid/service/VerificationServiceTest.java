@@ -17,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class VerificationServiceTest {
 
-    private InMemoryIdentityRepository repository;
     private AuditLog auditLog;
     private ManagementService managementService;
     private VerificationService verificationService;
@@ -29,7 +28,7 @@ class VerificationServiceTest {
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryIdentityRepository();
+        InMemoryIdentityRepository repository = new InMemoryIdentityRepository();
         auditLog = new AuditLog();
         managementService = new ManagementServiceImpl(repository, auditLog);
         verificationService = new VerificationServiceImpl(repository, auditLog);
