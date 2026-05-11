@@ -444,8 +444,8 @@ class VerificationServiceTest {
                 )
         );
 
-        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
         assertTrue(auditLog.getEvents().size() > eventsBefore);
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
         assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
         assertTrue(event.details().contains("id=" + VALID_ID));
         assertTrue(event.details().contains("org=" + OrganisationType.CENTRAL_AUTHORITY));
