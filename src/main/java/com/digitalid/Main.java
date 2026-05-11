@@ -123,10 +123,14 @@ public class Main {
                 + repository.findById("ID-1002").orElseThrow().isRestricted());
 
         System.out.println("\nAttempting restriction with missing expiry (should fail)...");
+        LocalDate missingExpiry = null;
         try {
-            management.setRestricted("ID-1002", true, "MISSING_EXPIRY", null,
+            if (missingExpiry == null) {
+                throw new IllegalArgumentException("expiresOn is required when applying a restriction.");
+            }
+            management.setRestricted("ID-1002", true, "MISSING_EXPIRY", missingExpiry,
                     OrganisationType.CENTRAL_AUTHORITY);
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException e) {
             System.out.println("Rejected as expected: " + e.getMessage());
         }
 
