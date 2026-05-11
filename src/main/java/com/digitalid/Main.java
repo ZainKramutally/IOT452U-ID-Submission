@@ -209,9 +209,9 @@ public class Main {
 
     private static void printResult(VerificationResult result) {
         System.out.println("  exists=" + result.exists()
-                + " | valid=" + result.isValid()
-                + " | reason=" + result.getReason()
-                + (result.getDetail() != null ? " | detail=" + result.getDetail() : ""));
+                + " | valid=" + result.valid()
+                + " | reason=" + result.reason()
+                + (result.detail() != null ? " | detail=" + result.detail() : ""));
         System.out.println();
     }
 }
