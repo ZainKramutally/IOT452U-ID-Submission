@@ -29,6 +29,13 @@ public class VerificationServiceImpl implements VerificationService {
     public VerificationResult verify(VerificationRequest request) {
         Objects.requireNonNull(request, "request");
 
+        if (request.organisationType() == OrganisationType.CENTRAL_AUTHORITY) {
+            auditLog.record(AuditActions.rejected(AuditActions.VERIFY), "id=" + request.digitalId()
+                    + ",org=" + request.organisationType()
+                    + ",reason=UNAUTHORISED");
+            throw new SecurityException("Central authority is not permitted to perform verification requests");
+        }
+
         return repository.findById(request.digitalId())
                 .map(identity -> evaluate(identity, request))
                 .orElseGet(() -> {
@@ -46,6 +53,7 @@ public class VerificationServiceImpl implements VerificationService {
             case DRIVING_LICENCE_AUTHORITY -> evaluateForDrivingLicence(identity);
             case EMPLOYER, BANK -> evaluateForEmployerOrBank(identity);
             case CENTRAL_AUTHORITY -> {
+                // Defensive check: central authority requests should be rejected before lookup.
                 auditLog.record(AuditActions.rejected(AuditActions.VERIFY), "id=" + identity.getId()
                         + ",org=" + orgType
                         + ",reason=UNAUTHORISED");
