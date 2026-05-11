@@ -13,5 +13,16 @@ public class AuditEvent {
         this.action = Objects.requireNonNull(action, "action");
         this.details = Objects.requireNonNull(details, "details");
     }
-}
 
+    public Instant getTimestamp() {
+        return timestamp;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public String getDetails() {
+        return details;
+    }
+}
