@@ -181,7 +181,7 @@ Valid status transitions are defined directly on `DigitalIDStatus` via an abstra
 
 ### Restriction History with Expiry
 
-Restrictions are stored as a `RestrictionChange` history rather than a single boolean flag. Each entry carries a reason, an optional expiry date, and a timestamp. `isRestricted()` on `DigitalID` evaluates the most recent restriction entry and returns false if the expiry date has passed. This allows time-limited restrictions to expire automatically without requiring a manual update from the central authority. The history is preserved in full so past restrictions remain auditable even after they have expired.
+Restrictions are stored as a `RestrictionChange` history rather than a single boolean flag. Each restriction entry carries a reason, a required expiry date, and a timestamp. `isRestricted()` on `DigitalID` evaluates the most recent restriction entry and returns false once that expiry date has passed. This allows restrictions to expire automatically without requiring a manual update from the central authority. The history is preserved in full so past restrictions remain auditable even after they have expired.
 
 ### Audit Logging of Rejections
 
