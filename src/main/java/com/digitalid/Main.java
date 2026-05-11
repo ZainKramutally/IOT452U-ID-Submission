@@ -123,12 +123,8 @@ public class Main {
                 + repository.findById("ID-1002").orElseThrow().isRestricted());
 
         System.out.println("\nAttempting restriction with missing expiry (should fail)...");
-        LocalDate missingExpiry = null;
         try {
-            if (missingExpiry == null) {
-                throw new IllegalArgumentException("expiresOn is required when applying a restriction.");
-            }
-            management.setRestricted("ID-1002", true, "MISSING_EXPIRY", missingExpiry,
+            management.setRestricted("ID-1002", true, "MISSING_EXPIRY", null,
                     OrganisationType.CENTRAL_AUTHORITY);
         } catch (IllegalArgumentException e) {
             System.out.println("Rejected as expected: " + e.getMessage());
@@ -240,6 +236,15 @@ public class Main {
         try {
             verification.verify(
                     new VerificationRequest("ID-1001", OrganisationType.CENTRAL_AUTHORITY, null, null)
+            );
+        } catch (SecurityException e) {
+            System.out.println("Rejected as expected: " + e.getMessage());
+        }
+
+        System.out.println("CENTRAL_AUTHORITY attempting to verify missing ID (not permitted)...");
+        try {
+            verification.verify(
+                    new VerificationRequest("ID-XXXX", OrganisationType.CENTRAL_AUTHORITY, null, null)
             );
         } catch (SecurityException e) {
             System.out.println("Rejected as expected: " + e.getMessage());

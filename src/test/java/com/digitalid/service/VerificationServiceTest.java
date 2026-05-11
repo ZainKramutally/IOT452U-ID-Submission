@@ -453,6 +453,33 @@ class VerificationServiceTest {
     }
 
     @Test
+    void centralAuthorityCallingVerifyOnMissingIdThrowsSecurityException() {
+        assertThrows(SecurityException.class, () ->
+                verificationService.verify(
+                        new VerificationRequest("NONEXISTENT", OrganisationType.CENTRAL_AUTHORITY, null, null)
+                )
+        );
+    }
+
+    @Test
+    void centralAuthorityCallingVerifyOnMissingIdRecordsRejectedAuditEvent() {
+        int eventsBefore = auditLog.getEvents().size();
+
+        assertThrows(SecurityException.class, () ->
+                verificationService.verify(
+                        new VerificationRequest("NONEXISTENT", OrganisationType.CENTRAL_AUTHORITY, null, null)
+                )
+        );
+
+        assertTrue(auditLog.getEvents().size() > eventsBefore);
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
+        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
+        assertTrue(event.details().contains("id=NONEXISTENT"));
+        assertTrue(event.details().contains("org=" + OrganisationType.CENTRAL_AUTHORITY));
+        assertTrue(event.details().contains("reason=UNAUTHORISED"));
+    }
+
+    @Test
     void taxAuthorityRequestWithNullPeriodStartThrowsIllegalArgumentException() {
         managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
 

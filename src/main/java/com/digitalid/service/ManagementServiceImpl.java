@@ -85,11 +85,20 @@ public class ManagementServiceImpl implements ManagementService {
             throw new IllegalStateException("Digital ID is revoked: " + digitalID.getId());
         }
 
-        digitalID.setRestricted(restricted, reason, expiresOn);
-        repository.save(digitalID);
-        String details = "id=" + id + ",restricted=" + restricted + ",reason=" + reason;
+        String normalizedReason = normalizeReason(reason);
+        LocalDate normalizedExpiry = null;
         if (restricted) {
-            details += ",expiresOn=" + expiresOn;
+            if (expiresOn == null) {
+                throw new IllegalArgumentException("expiresOn must not be null when restricted");
+            }
+            normalizedExpiry = expiresOn;
+        }
+
+        digitalID.setRestricted(restricted, normalizedReason, normalizedExpiry);
+        repository.save(digitalID);
+        String details = "id=" + id + ",restricted=" + restricted + ",reason=" + normalizedReason;
+        if (restricted) {
+            details += ",expiresOn=" + normalizedExpiry;
         }
         auditLog.record(AuditActions.SET_RESTRICTED, details);
     }
@@ -108,4 +117,12 @@ public class ManagementServiceImpl implements ManagementService {
         }
     }
 
+    private static String normalizeReason(String reason) {
+        Objects.requireNonNull(reason, "reason");
+        String trimmed = reason.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("reason must not be blank");
+        }
+        return trimmed;
+    }
 }

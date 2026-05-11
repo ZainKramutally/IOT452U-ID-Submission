@@ -481,5 +481,35 @@ class ManagementServiceTest {
         assertTrue(updateEvent.details().contains("from=" + VALID_NAME));
         assertTrue(updateEvent.details().contains("to=New Name"));
     }
-}
 
+    @Test
+    void setRestrictedWithBlankReasonThrowsIllegalArgumentException() {
+        service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+
+        assertThrows(IllegalArgumentException.class, () ->
+                service.setRestricted(VALID_ID, true, "   ", RESTRICTION_EXPIRY,
+                        OrganisationType.CENTRAL_AUTHORITY)
+        );
+    }
+
+    @Test
+    void setRestrictedWithNullExpiryThrowsIllegalArgumentException() {
+        service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+
+        assertThrows(IllegalArgumentException.class, () ->
+                service.setRestricted(VALID_ID, true, RESTRICTION_REASON, null,
+                        OrganisationType.CENTRAL_AUTHORITY)
+        );
+    }
+
+    @Test
+    void setRestrictedNormalizesReasonInAuditDetails() {
+        service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+
+        service.setRestricted(VALID_ID, true, "  REVIEW  ", RESTRICTION_EXPIRY,
+                OrganisationType.CENTRAL_AUTHORITY);
+
+        AuditEvent event = auditLog.getEvents().get(1);
+        assertTrue(event.details().contains("reason=REVIEW"));
+    }
+}
