@@ -63,6 +63,11 @@ public class VerificationServiceImpl implements VerificationService {
                     "Tax authority verification requires both periodStart and periodEnd"
             );
         }
+        if (periodStart.isAfter(periodEnd)) {
+            throw new IllegalArgumentException(
+                    "Tax authority verification requires periodStart to be on or before periodEnd"
+            );
+        }
 
         boolean suspendedDuringPeriod = identity.getStatusHistory().stream()
                 .filter(sc -> sc.status() == DigitalIDStatus.SUSPENDED)
