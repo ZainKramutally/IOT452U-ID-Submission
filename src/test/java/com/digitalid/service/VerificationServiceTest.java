@@ -99,7 +99,7 @@ class VerificationServiceTest {
     void verifyingNonExistentIdAsTaxAuthorityReturnsNotFound() {
         VerificationResult result = verificationService.verify(
                 new VerificationRequest("NONEXISTENT", OrganisationType.TAX_AUTHORITY,
-                        LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31))
+                        TODAY_UTC.minusDays(30), TODAY_UTC.plusDays(30))
         );
 
         assertFalse(result.exists());
