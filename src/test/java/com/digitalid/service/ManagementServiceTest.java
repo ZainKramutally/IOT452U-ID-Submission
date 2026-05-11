@@ -571,17 +571,82 @@ class ManagementServiceTest {
     }
 
     @Test
-    void setRestrictedWithNullExpiryRecordsAuditEvent() {
-        service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+    void createIdentityWithBlankNameRecordsAuditEvent() {
         int eventsBefore = auditLog.getEvents().size();
 
         assertThrows(IllegalArgumentException.class, () ->
-                service.setRestricted(VALID_ID, true, RESTRICTION_REASON, null, OrganisationType.CENTRAL_AUTHORITY)
+                service.createIdentity(VALID_ID, "   ", VALID_DOB, OrganisationType.CENTRAL_AUTHORITY)
+        );
+
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
+        assertTrue(auditLog.getEvents().size() > eventsBefore);
+        assertEquals("CREATE_IDENTITY_REJECTED", event.action());
+        assertTrue(event.details().contains("reason=" + AuditReasons.MISSING_FULL_NAME));
+    }
+
+    @Test
+    void updateNameOnNonExistentIdRecordsAuditEvent() {
+        int eventsBefore = auditLog.getEvents().size();
+
+        assertThrows(IllegalArgumentException.class, () ->
+                service.updateName("NONEXISTENT", "New Name", OrganisationType.CENTRAL_AUTHORITY)
+        );
+
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
+        assertTrue(auditLog.getEvents().size() > eventsBefore);
+        assertEquals("UPDATE_NAME_REJECTED", event.action());
+        assertTrue(event.details().contains("reason=" + AuditReasons.NOT_FOUND));
+    }
+
+    @Test
+    void changeStatusOnNonExistentIdRecordsAuditEvent() {
+        int eventsBefore = auditLog.getEvents().size();
+
+        assertThrows(IllegalArgumentException.class, () ->
+                service.changeStatus("NONEXISTENT", DigitalIDStatus.SUSPENDED, OrganisationType.CENTRAL_AUTHORITY)
+        );
+
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
+        assertTrue(auditLog.getEvents().size() > eventsBefore);
+        assertEquals("CHANGE_STATUS_REJECTED", event.action());
+        assertTrue(event.details().contains("reason=" + AuditReasons.NOT_FOUND));
+    }
+
+    @Test
+    void setRestrictedOnNonExistentIdRecordsAuditEvent() {
+        int eventsBefore = auditLog.getEvents().size();
+
+        assertThrows(IllegalArgumentException.class, () ->
+                service.setRestricted("NONEXISTENT", true, RESTRICTION_REASON, RESTRICTION_EXPIRY,
+                        OrganisationType.CENTRAL_AUTHORITY)
         );
 
         AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
         assertTrue(auditLog.getEvents().size() > eventsBefore);
         assertEquals("SET_RESTRICTED_REJECTED", event.action());
-        assertTrue(event.details().contains("reason=" + AuditReasons.MISSING_EXPIRES_ON));
+        assertTrue(event.details().contains("reason=" + AuditReasons.NOT_FOUND));
+    }
+
+    @Test
+    void setRestrictedWithNullExpirySucceeds() {
+        service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+
+        service.setRestricted(VALID_ID, true, RESTRICTION_REASON, null, OrganisationType.CENTRAL_AUTHORITY);
+
+        assertTrue(repository.findById(VALID_ID).orElseThrow().isRestricted());
+    }
+
+    @Test
+    void setRestrictedWithNullExpiryOmitsExpiryInAuditDetails() {
+        service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+        int eventsBefore = auditLog.getEvents().size();
+
+        service.setRestricted(VALID_ID, true, RESTRICTION_REASON, null, OrganisationType.CENTRAL_AUTHORITY);
+
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
+        assertTrue(auditLog.getEvents().size() > eventsBefore);
+        assertEquals("SET_RESTRICTED", event.action());
+        assertTrue(event.details().contains("reason=" + RESTRICTION_REASON));
+        assertFalse(event.details().contains("expiresOn="));
     }
 }

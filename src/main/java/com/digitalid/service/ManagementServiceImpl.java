@@ -114,14 +114,7 @@ public class ManagementServiceImpl implements ManagementService {
 
         String normalizedReason = requireText(reason, "reason", AuditActions.SET_RESTRICTED, checkedId,
                 AuditReasons.MISSING_REASON);
-        LocalDate normalizedExpiry = null;
-        if (restricted) {
-            if (expiresOn == null) {
-                recordRejection(AuditActions.SET_RESTRICTED, checkedId, AuditReasons.MISSING_EXPIRES_ON);
-                throw new IllegalArgumentException("expiresOn must not be null when restricted");
-            }
-            normalizedExpiry = expiresOn;
-        }
+        LocalDate normalizedExpiry = restricted ? expiresOn : null;
 
         digitalID.setRestricted(restricted, normalizedReason, normalizedExpiry);
         repository.save(digitalID);
@@ -130,7 +123,7 @@ public class ManagementServiceImpl implements ManagementService {
                 detail(AuditDetailKeys.RESTRICTED, restricted),
                 detail(AuditDetailKeys.REASON, normalizedReason)
         );
-        if (restricted) {
+        if (normalizedExpiry != null) {
             details += "," + detail(AuditDetailKeys.EXPIRES_ON, normalizedExpiry);
         }
         auditLog.record(AuditActions.SET_RESTRICTED, details);

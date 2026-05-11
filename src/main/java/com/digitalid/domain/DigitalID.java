@@ -75,7 +75,7 @@ public class DigitalID {
 
     public void setRestricted(boolean restricted, String reason, LocalDate expiresOn) {
         String checkedReason = requireText(reason, "reason");
-        LocalDate normalizedExpiry = restricted ? Objects.requireNonNull(expiresOn, "expiresOn") : null;
+        LocalDate normalizedExpiry = restricted ? expiresOn : null;
         restrictionHistory.add(new RestrictionChange(restricted, checkedReason, normalizedExpiry, Instant.now()));
     }
 
