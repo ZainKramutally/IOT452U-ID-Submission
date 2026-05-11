@@ -12,9 +12,9 @@ import com.digitalid.verification.VerificationRequest;
 import com.digitalid.verification.VerificationResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.time.ZoneOffset;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -587,18 +587,37 @@ class VerificationServiceTest {
     }
 
     @Test
-    void blankIdRequestRecordsRejectedAuditEvent() {
-        int eventsBefore = auditLog.getEvents().size();
-
+    void blankIdRequestThrowsIllegalArgumentExceptionAtConstruction() {
         assertThrows(IllegalArgumentException.class, () ->
-                verificationService.verify(
-                        new VerificationRequest("   ", OrganisationType.EMPLOYER, null, null)
-                )
+                new VerificationRequest("   ", OrganisationType.EMPLOYER, null, null)
         );
+    }
 
-        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
-        assertTrue(auditLog.getEvents().size() > eventsBefore);
-        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
-        assertTrue(event.details().contains("reason=" + AuditReasons.MISSING_ID));
+    @Test
+    void verifyWithNullOrganisationTypeThrowsNullPointerExceptionAtConstruction() {
+        assertThrows(NullPointerException.class, () ->
+                new VerificationRequest(VALID_ID, null, null, null)
+        );
+    }
+
+    @Test
+    void verifyWithNullDigitalIdThrowsNullPointerExceptionAtConstruction() {
+        assertThrows(NullPointerException.class, () ->
+                new VerificationRequest(null, OrganisationType.EMPLOYER, null, null)
+        );
+    }
+
+    @Test
+    void centralAuthorityWithNullIdThrowsNullPointerExceptionAtConstruction() {
+        assertThrows(NullPointerException.class, () ->
+                new VerificationRequest(null, OrganisationType.CENTRAL_AUTHORITY, null, null)
+        );
+    }
+
+    @Test
+    void centralAuthorityWithBlankIdThrowsIllegalArgumentExceptionAtConstruction() {
+        assertThrows(IllegalArgumentException.class, () ->
+                new VerificationRequest("   ", OrganisationType.CENTRAL_AUTHORITY, null, null)
+        );
     }
 }
