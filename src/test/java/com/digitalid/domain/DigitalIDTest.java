@@ -79,8 +79,17 @@ class DigitalIDTest {
     }
 
     @Test
-    void restrictionHistoryIsUnmodifiable() {
+    void statusHistoryIsUnmodifiable() {
         DigitalID digitalID = new DigitalID("ID-9", "Dee Chen", LocalDate.of(1995, 9, 3));
+
+        assertThrows(UnsupportedOperationException.class, () ->
+                digitalID.getStatusHistory().clear()
+        );
+    }
+
+    @Test
+    void restrictionHistoryIsUnmodifiable() {
+        DigitalID digitalID = new DigitalID("ID-10", "Dee Chen", LocalDate.of(1995, 9, 3));
 
         assertThrows(UnsupportedOperationException.class, () ->
                 digitalID.getRestrictionHistory().clear()
