@@ -10,7 +10,9 @@ import java.util.List;
  */
 public interface IdentityRepository {
     /**
-     * Returns all Digital IDs currently held in the store.
+     * Returns an unmodifiable snapshot of all Digital IDs currently held in the store.
+     * Changes to the repository after this method returns are not reflected in the returned list.
+     * No specific iteration order is guaranteed.
      */
     List<DigitalID> findAll();
 
