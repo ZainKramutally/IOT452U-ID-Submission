@@ -1,7 +1,9 @@
 package com.digitalid.service;
 
 import com.digitalid.audit.AuditActions;
+import com.digitalid.audit.AuditDetailKeys;
 import com.digitalid.audit.AuditLog;
+import com.digitalid.audit.AuditReasons;
 import com.digitalid.domain.DigitalID;
 import com.digitalid.domain.DigitalIDStatus;
 import com.digitalid.domain.OrganisationType;
@@ -27,20 +29,26 @@ public class VerificationServiceImpl implements VerificationService {
 
     @Override
     public VerificationResult verify(VerificationRequest request) {
-        Objects.requireNonNull(request, "request");
+        if (request == null) {
+            recordRejection(AuditActions.VERIFY, null, null, AuditReasons.MISSING_REQUEST);
+            throw new NullPointerException("request");
+        }
 
-        if (request.organisationType() == OrganisationType.CENTRAL_AUTHORITY) {
-            auditLog.record(AuditActions.rejected(AuditActions.VERIFY), "id=" + request.digitalId()
-                    + ",org=" + request.organisationType()
-                    + ",reason=UNAUTHORISED");
+        OrganisationType orgType = requireOrganisationType(request.organisationType());
+        String digitalId = requireText(request.digitalId(), "digitalId", orgType, AuditReasons.MISSING_ID);
+
+        if (orgType == OrganisationType.CENTRAL_AUTHORITY) {
+            recordRejection(AuditActions.VERIFY, digitalId, orgType, AuditReasons.UNAUTHORISED);
             throw new SecurityException("Central authority is not permitted to perform verification requests");
         }
 
-        return repository.findById(request.digitalId())
+        return repository.findById(digitalId)
                 .map(identity -> evaluate(identity, request))
                 .orElseGet(() -> {
-                    auditLog.record(AuditActions.VERIFY_NOT_FOUND, "id=" + request.digitalId()
-                            + ",org=" + request.organisationType());
+                    auditLog.record(AuditActions.VERIFY_NOT_FOUND, details(
+                            detail(AuditDetailKeys.ID, digitalId),
+                            detail(AuditDetailKeys.ORG, orgType)
+                    ));
                     return new VerificationResult(false, false, ReasonCode.NOT_FOUND, null);
                 });
     }
@@ -54,18 +62,18 @@ public class VerificationServiceImpl implements VerificationService {
             case EMPLOYER, BANK -> evaluateForEmployerOrBank(identity);
             case CENTRAL_AUTHORITY -> {
                 // Defensive check: central authority requests should be rejected before lookup.
-                auditLog.record(AuditActions.rejected(AuditActions.VERIFY), "id=" + identity.getId()
-                        + ",org=" + orgType
-                        + ",reason=UNAUTHORISED");
+                recordRejection(AuditActions.VERIFY, identity.getId(), orgType, AuditReasons.UNAUTHORISED);
                 throw new SecurityException(
                         "Central authority is not permitted to perform verification requests"
                 );
             }
         };
 
-        auditLog.record(AuditActions.VERIFY, "id=" + identity.getId()
-                + ",org=" + orgType
-                + ",result=" + result.reason());
+        auditLog.record(AuditActions.VERIFY, details(
+                detail(AuditDetailKeys.ID, identity.getId()),
+                detail(AuditDetailKeys.ORG, orgType),
+                detail(AuditDetailKeys.RESULT, result.reason())
+        ));
 
         return result;
     }
@@ -75,11 +83,9 @@ public class VerificationServiceImpl implements VerificationService {
                                                        LocalDate periodEnd) {
         if (periodStart == null || periodEnd == null) {
             String reason = (periodStart == null && periodEnd == null)
-                    ? "MISSING_PERIODS"
-                    : (periodStart == null ? "MISSING_PERIOD_START" : "MISSING_PERIOD_END");
-            auditLog.record(AuditActions.rejected(AuditActions.VERIFY), "id=" + identity.getId()
-                    + ",org=" + OrganisationType.TAX_AUTHORITY
-                    + ",reason=" + reason);
+                    ? AuditReasons.MISSING_PERIODS
+                    : (periodStart == null ? AuditReasons.MISSING_PERIOD_START : AuditReasons.MISSING_PERIOD_END);
+            recordRejection(AuditActions.VERIFY, identity.getId(), OrganisationType.TAX_AUTHORITY, reason);
             throw new IllegalArgumentException(
                     "Tax authority verification requires both periodStart and periodEnd"
             );
@@ -151,4 +157,40 @@ public class VerificationServiceImpl implements VerificationService {
         return new VerificationResult(true, active, active ? ReasonCode.VALID : ReasonCode.INVALID, null);
     }
 
+    private OrganisationType requireOrganisationType(OrganisationType orgType) {
+        if (orgType == null) {
+            recordRejection(AuditActions.VERIFY, null, null, AuditReasons.MISSING_ORG);
+            throw new NullPointerException("organisationType");
+        }
+        return orgType;
+    }
+
+    private String requireText(String value, String field, OrganisationType orgType, String missingReason) {
+        if (value == null) {
+            recordRejection(AuditActions.VERIFY, null, orgType, missingReason);
+            throw new NullPointerException(field);
+        }
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) {
+            recordRejection(AuditActions.VERIFY, value, orgType, missingReason);
+            throw new IllegalArgumentException(field + " must not be blank");
+        }
+        return trimmed;
+    }
+
+    private void recordRejection(String action, String id, OrganisationType orgType, String reason) {
+        auditLog.record(AuditActions.rejected(action), details(
+                detail(AuditDetailKeys.ID, id),
+                detail(AuditDetailKeys.ORG, orgType),
+                detail(AuditDetailKeys.REASON, reason)
+        ));
+    }
+
+    private static String detail(String key, Object value) {
+        return key + "=" + value;
+    }
+
+    private static String details(String... parts) {
+        return String.join(",", parts);
+    }
 }

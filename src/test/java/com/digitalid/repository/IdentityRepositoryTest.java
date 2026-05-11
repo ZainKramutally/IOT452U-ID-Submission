@@ -168,6 +168,20 @@ class IdentityRepositoryTest {
     }
 
     @Test
+    void savedRestrictionWithoutExpiryIsReflectedOnRetrieval() {
+        DigitalID digitalID = new DigitalID("ID-1", "Test User", VALID_DOB);
+        repository.save(digitalID);
+
+        digitalID.setRestricted(true, "NO_EXPIRY", null);
+        repository.save(digitalID);
+
+        DigitalID found = repository.findById("ID-1").orElseThrow();
+        assertTrue(found.isRestricted());
+        assertEquals(1, found.getRestrictionHistory().size());
+        assertNull(found.getRestrictionHistory().get(0).expiresOn());
+    }
+
+    @Test
     void multipleIdentitiesCanBeSavedAndRetrievedIndependently() {
         DigitalID first = new DigitalID("ID-1", "First User", VALID_DOB);
         DigitalID second = new DigitalID("ID-2", "Second User", VALID_DOB);
