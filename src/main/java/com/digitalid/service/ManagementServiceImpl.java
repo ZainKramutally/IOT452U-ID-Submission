@@ -129,7 +129,7 @@ public class ManagementServiceImpl implements ManagementService {
                 detail(AuditDetailKeys.REASON, normalizedReason)
         );
         if (normalizedExpiry != null) {
-            details += "," + detail(AuditDetailKeys.EXPIRES_ON, normalizedExpiry);
+            details = details(details, detail(AuditDetailKeys.EXPIRES_ON, normalizedExpiry));
         }
         auditLog.record(AuditActions.SET_RESTRICTED, details);
     }
