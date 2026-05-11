@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Objects;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class VerificationServiceImpl implements VerificationService {
     private final IdentityRepository repository;
     private final AuditLog auditLog;
@@ -27,20 +28,20 @@ public class VerificationServiceImpl implements VerificationService {
     public VerificationResult verify(VerificationRequest request) {
         Objects.requireNonNull(request, "request");
 
-        return repository.findById(request.getDigitalId())
+        return repository.findById(request.digitalId())
                 .map(identity -> evaluate(identity, request))
                 .orElseGet(() -> {
-                    auditLog.record("VERIFY_NOT_FOUND", "id=" + request.getDigitalId()
-                            + ",org=" + request.getOrganisationType());
+                    auditLog.record("VERIFY_NOT_FOUND", "id=" + request.digitalId()
+                            + ",org=" + request.organisationType());
                     return new VerificationResult(false, false, ReasonCode.NOT_FOUND, null);
                 });
     }
 
     private VerificationResult evaluate(DigitalID identity, VerificationRequest request) {
-        OrganisationType orgType = request.getOrganisationType();
+        OrganisationType orgType = request.organisationType();
 
         VerificationResult result = switch (orgType) {
-            case TAX_AUTHORITY -> evaluateForTaxAuthority(identity, request.getPeriodStart(), request.getPeriodEnd());
+            case TAX_AUTHORITY -> evaluateForTaxAuthority(identity, request.periodStart(), request.periodEnd());
             case DRIVING_LICENCE_AUTHORITY -> evaluateForDrivingLicence(identity);
             case EMPLOYER, BANK -> evaluateForEmployerOrBank(identity);
             case CENTRAL_AUTHORITY -> throw new SecurityException(
@@ -50,7 +51,7 @@ public class VerificationServiceImpl implements VerificationService {
 
         auditLog.record("VERIFY", "id=" + identity.getId()
                 + ",org=" + orgType
-                + ",result=" + result.getReason());
+                + ",result=" + result.reason());
 
         return result;
     }

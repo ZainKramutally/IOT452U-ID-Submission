@@ -9,6 +9,7 @@ import com.digitalid.repository.IdentityRepository;
 import java.time.LocalDate;
 import java.util.Objects;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class ManagementServiceImpl implements ManagementService {
     private final IdentityRepository repository;
     private final AuditLog auditLog;
@@ -34,7 +35,7 @@ public class ManagementServiceImpl implements ManagementService {
     }
 
     @Override
-    public DigitalID updateName(String id, String fullName, OrganisationType actor) {
+    public void updateName(String id, String fullName, OrganisationType actor) {
         ensureCentralAuthority(actor, "UPDATE_NAME", id);
         DigitalID digitalID = loadIdentity(id);
         String previousName = digitalID.getFullName();
@@ -47,18 +48,17 @@ public class ManagementServiceImpl implements ManagementService {
         digitalID.updateFullName(fullName);
         repository.save(digitalID);
         auditLog.record("UPDATE_NAME", "id=" + id + ",from=" + previousName + ",to=" + fullName);
-        return digitalID;
     }
 
     @Override
-    public DigitalID changeStatus(String id, DigitalIDStatus newStatus, OrganisationType actor) {
+    public void changeStatus(String id, DigitalIDStatus newStatus, OrganisationType actor) {
         ensureCentralAuthority(actor, "CHANGE_STATUS", id);
         DigitalID digitalID = loadIdentity(id);
         DigitalIDStatus previousStatus = digitalID.getStatus();
 
         if (previousStatus == newStatus) {
             auditLog.record("CHANGE_STATUS_NO_OP", "id=" + id + ",status=" + newStatus);
-            return digitalID;
+            return;
         }
 
         if (!previousStatus.canTransitionTo(newStatus)) {
@@ -71,11 +71,10 @@ public class ManagementServiceImpl implements ManagementService {
         digitalID.recordStatusChange(newStatus);
         repository.save(digitalID);
         auditLog.record("CHANGE_STATUS", "id=" + id + ",from=" + previousStatus + ",to=" + newStatus);
-        return digitalID;
     }
 
     @Override
-    public DigitalID setRestricted(String id, boolean restricted, OrganisationType actor) {
+    public void setRestricted(String id, boolean restricted, OrganisationType actor) {
         ensureCentralAuthority(actor, "SET_RESTRICTED", id);
         DigitalID digitalID = loadIdentity(id);
 
@@ -87,7 +86,6 @@ public class ManagementServiceImpl implements ManagementService {
         digitalID.setRestricted(restricted);
         repository.save(digitalID);
         auditLog.record("SET_RESTRICTED", "id=" + id + ",restricted=" + restricted);
-        return digitalID;
     }
 
 

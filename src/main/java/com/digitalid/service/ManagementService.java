@@ -24,7 +24,7 @@ public interface ManagementService {
      * Throws IllegalArgumentException if the ID does not exist.
      * Throws IllegalStateException if the Digital ID is REVOKED.
      */
-    DigitalID updateName(String id, String fullName, OrganisationType actor);
+    void updateName(String id, String fullName, OrganisationType actor);
 
     /**
      * Changes the status of an existing Digital ID.
@@ -34,7 +34,7 @@ public interface ManagementService {
      * Throws IllegalArgumentException if the ID does not exist.
      * Throws IllegalStateException if the transition is not permitted.
      */
-    DigitalID changeStatus(String id, DigitalIDStatus status, OrganisationType actor);
+    void changeStatus(String id, DigitalIDStatus status, OrganisationType actor);
 
     /**
      * Sets or removes the restriction flag on an existing Digital ID.
@@ -42,5 +42,5 @@ public interface ManagementService {
      * Throws IllegalArgumentException if the ID does not exist.
      * Throws IllegalStateException if the Digital ID is REVOKED.
      */
-    DigitalID setRestricted(String id, boolean restricted, OrganisationType actor);
+    void setRestricted(String id, boolean restricted, OrganisationType actor);
 }
