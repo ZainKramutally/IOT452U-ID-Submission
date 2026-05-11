@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/ZainKramutally/IOT452U-ID-Submission/actions/workflows/main.yml/badge.svg)](https://github.com/ZainKramutally/IOT452U-ID-Submission/actions/workflows/main.yml)
 
-**GitHub Repository:** https://github.com/ZainKramutally/IOT452U-ID-Submission
+**GitHub Repository:** [https://github.com/ZainKramutally/IOT452U-ID-Submission](https://github.com/ZainKramutally/IOT452U-ID-Submission)
 
 ---
 
@@ -92,8 +92,10 @@ src/
 ├── main/java/com/digitalid/
 │   ├── audit/
 │   │   ├── AuditActions.java
+│   │   ├── AuditDetailKeys.java
 │   │   ├── AuditEvent.java
-│   │   └── AuditLog.java
+│   │   ├── AuditLog.java
+│   │   └── AuditReasons.java
 │   ├── domain/
 │   │   ├── DigitalID.java
 │   │   ├── DigitalIDStatus.java
@@ -125,7 +127,7 @@ src/
 
 ### Package Responsibilities
 
-**`audit`** records all key system actions. `AuditEvent` is an immutable record storing a timestamp, action label, and detail string. `AuditLog` holds an ordered list of events and exposes a `printAll` method for demonstration. `AuditActions` defines all action label constants so no magic strings appear anywhere in the service layer.
+**`audit`** records all key system actions. `AuditEvent` is an immutable record storing a timestamp, action label, and detail string. `AuditLog` holds an ordered list of events and exposes a `printAll` method for demonstration. `AuditActions` defines all action label constants. `AuditDetailKeys` defines all audit detail field name constants such as id, from, to, reason, and org. `AuditReasons` defines all rejection reason constants such as UNAUTHORISED, REVOKED, DUPLICATE, and MISSING_ID. Together these three classes mean the entire audit system is free of magic strings.
 
 **`domain`** is the core model with no dependencies on any other package. `DigitalID` holds both immutable fields (`id`, `dateOfBirth`) and mutable fields (`fullName`, `status`). It maintains a full `statusHistory` as a list of `StatusChange` records and a `restrictionHistory` as a list of `RestrictionChange` records. `DigitalIDStatus` is an enum that encodes valid state transitions directly on each constant via `canTransitionTo`. `OrganisationType` and `ReasonCode` are enums that eliminate magic strings from the service and verification layers.
 
@@ -181,7 +183,7 @@ Valid status transitions are defined directly on `DigitalIDStatus` via an abstra
 
 ### Restriction History with Expiry
 
-Restrictions are stored as a `RestrictionChange` history rather than a single boolean flag. Each restriction entry carries a reason, an optional expiry date, and a timestamp. `isRestricted()` on `DigitalID` evaluates the most recent restriction entry and returns false once that expiry date has passed. This allows time-limited restrictions to expire automatically without requiring a manual update from the central authority. The history is preserved in full so past restrictions remain auditable even after they have expired.
+Restrictions are stored as a `RestrictionChange` history rather than a single boolean flag. Each restriction entry carries a reason and a timestamp; the management service requires an expiry date whenever a restriction is applied. The domain model allows a null expiry for low-level usage (for example, in tests or direct domain manipulation), but the service layer enforces the expiry rule for all managed operations. `isRestricted()` on `DigitalID` evaluates the most recent restriction entry and returns false once that expiry date has passed. This allows time-limited restrictions to expire automatically without requiring a manual update from the central authority. The history is preserved in full so past restrictions remain auditable even after they have expired.
 
 ### Audit Logging of Rejections
 
@@ -189,7 +191,11 @@ Every operation that is rejected, whether due to an unauthorised actor, an inval
 
 ### No Magic Strings
 
-All reason codes are defined in the `ReasonCode` enum. All audit action labels are defined as constants in `AuditActions`. The codebase contains no inline string literals used as identifiers anywhere in the service or verification layers.
+All reason codes are defined in the `ReasonCode` enum. All audit action labels are defined as constants in `AuditActions`. All audit detail field name keys such as id, from, to, org, and reason are defined in `AuditDetailKeys`. All rejection reason strings such as UNAUTHORISED, REVOKED, DUPLICATE, and MISSING_ID are defined in `AuditReasons`. The codebase contains no inline string literals used as identifiers anywhere in the service or verification layers. Every string that carries meaning is defined once and referenced everywhere.
+
+### Java Records for Value Objects
+
+Immutable value objects throughout the system — `AuditEvent`, `StatusChange`, `RestrictionChange`, `VerificationRequest`, and `VerificationResult` — are implemented as Java records. Records eliminate constructor, getter, equals, hashCode, and toString boilerplate whilst making immutability explicit by design. This is idiomatic Java 17 and keeps value-carrying classes concise and readable.
 
 ### Programming to Interfaces
 
