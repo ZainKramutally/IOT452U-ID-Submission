@@ -32,7 +32,7 @@ public class Main {
         managementService.changeStatus(digitalID.getId(), DigitalIDStatus.ACTIVE, OrganisationType.CENTRAL_AUTHORITY);
 
         VerificationResult result = verificationService.verify(
-                new VerificationRequest(digitalID.getId(), OrganisationType.EMPLOYER, LocalDate.now())
+                new VerificationRequest(digitalID.getId(), OrganisationType.EMPLOYER, null, null)
         );
 
         System.out.println("\n" + result);
