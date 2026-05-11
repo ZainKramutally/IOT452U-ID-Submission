@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Objects;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class VerificationServiceImpl implements VerificationService {
     private final IdentityRepository repository;
     private final AuditLog auditLog;
