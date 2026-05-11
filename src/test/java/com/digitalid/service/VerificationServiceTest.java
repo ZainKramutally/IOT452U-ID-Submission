@@ -620,4 +620,33 @@ class VerificationServiceTest {
                 new VerificationRequest("   ", OrganisationType.CENTRAL_AUTHORITY, null, null)
         );
     }
+
+    @Test
+    void suspendedRestrictedIdentityVerifiedByDrivingLicenceAuthorityReturnsInactive() {
+        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+        managementService.setRestricted(VALID_ID, true, RESTRICTION_REASON, RESTRICTION_EXPIRY,
+                OrganisationType.CENTRAL_AUTHORITY);
+        managementService.changeStatus(VALID_ID, DigitalIDStatus.SUSPENDED, OrganisationType.CENTRAL_AUTHORITY);
+
+        VerificationResult result = verificationService.verify(
+                new VerificationRequest(VALID_ID, OrganisationType.DRIVING_LICENCE_AUTHORITY, null, null)
+        );
+
+        assertFalse(result.valid());
+        assertEquals(ReasonCode.INACTIVE, result.reason());
+    }
+
+    @Test
+    void suspensionStartingBeforePeriodIsDetectedByTaxAuthority() {
+        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+        managementService.changeStatus(VALID_ID, DigitalIDStatus.SUSPENDED, OrganisationType.CENTRAL_AUTHORITY);
+
+        VerificationResult result = verificationService.verify(
+                new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
+                        TODAY_UTC.minusDays(2), TODAY_UTC.plusDays(2))
+        );
+
+        assertFalse(result.valid());
+        assertEquals(ReasonCode.SUSPENDED_DURING_PERIOD, result.reason());
+    }
 }
