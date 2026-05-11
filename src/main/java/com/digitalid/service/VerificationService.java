@@ -4,7 +4,7 @@ import com.digitalid.verification.VerificationRequest;
 import com.digitalid.verification.VerificationResult;
 
 /**
- * Defines the verification capability of the Digital ID platform as single entry point
+ * Defines the verification capability of the Digital ID platform as a single entry point.
  * The central authority may not call this service.
  */
 public interface VerificationService {
