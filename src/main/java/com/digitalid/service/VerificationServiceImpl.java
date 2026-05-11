@@ -45,9 +45,14 @@ public class VerificationServiceImpl implements VerificationService {
             case TAX_AUTHORITY -> evaluateForTaxAuthority(identity, request.periodStart(), request.periodEnd());
             case DRIVING_LICENCE_AUTHORITY -> evaluateForDrivingLicence(identity);
             case EMPLOYER, BANK -> evaluateForEmployerOrBank(identity);
-            case CENTRAL_AUTHORITY -> throw new SecurityException(
-                    "Central authority is not permitted to perform verification requests"
-            );
+            case CENTRAL_AUTHORITY -> {
+                auditLog.record(AuditActions.rejected(AuditActions.VERIFY), "id=" + identity.getId()
+                        + ",org=" + orgType
+                        + ",reason=UNAUTHORISED");
+                throw new SecurityException(
+                        "Central authority is not permitted to perform verification requests"
+                );
+            }
         };
 
         auditLog.record(AuditActions.VERIFY, "id=" + identity.getId()
@@ -61,6 +66,12 @@ public class VerificationServiceImpl implements VerificationService {
                                                        LocalDate periodStart,
                                                        LocalDate periodEnd) {
         if (periodStart == null || periodEnd == null) {
+            String reason = (periodStart == null && periodEnd == null)
+                    ? "MISSING_PERIODS"
+                    : (periodStart == null ? "MISSING_PERIOD_START" : "MISSING_PERIOD_END");
+            auditLog.record(AuditActions.rejected(AuditActions.VERIFY), "id=" + identity.getId()
+                    + ",org=" + OrganisationType.TAX_AUTHORITY
+                    + ",reason=" + reason);
             throw new IllegalArgumentException(
                     "Tax authority verification requires both periodStart and periodEnd"
             );

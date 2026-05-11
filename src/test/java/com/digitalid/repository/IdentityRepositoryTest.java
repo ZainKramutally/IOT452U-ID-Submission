@@ -159,11 +159,12 @@ class IdentityRepositoryTest {
         DigitalID digitalID = new DigitalID("ID-1", "Test User", VALID_DOB);
         repository.save(digitalID);
 
-        digitalID.setRestricted(true);
+        digitalID.setRestricted(true, "LICENCE_REVIEW", LocalDate.of(2099, 1, 1));
         repository.save(digitalID);
 
         DigitalID found = repository.findById("ID-1").orElseThrow();
         assertTrue(found.isRestricted());
+        assertEquals(1, found.getRestrictionHistory().size());
     }
 
     @Test
