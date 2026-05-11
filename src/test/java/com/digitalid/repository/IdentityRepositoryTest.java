@@ -139,7 +139,7 @@ class IdentityRepositoryTest {
         repository.save(original);
         repository.save(original);
 
-        assertTrue(repository.exists("ID-1"));
+        assertEquals(1, repository.findAll().size());
     }
 
     @Test
