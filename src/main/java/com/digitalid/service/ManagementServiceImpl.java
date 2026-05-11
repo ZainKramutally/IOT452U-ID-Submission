@@ -20,11 +20,7 @@ public class ManagementServiceImpl implements ManagementService {
 
     @Override
     public DigitalID createIdentity(String id, String fullName, LocalDate dateOfBirth, OrganisationType actor) {
-        Objects.requireNonNull(actor, "actor");
-        if (actor != OrganisationType.CENTRAL_AUTHORITY) {
-            auditLog.record("CREATE_IDENTITY_REJECTED", "id=" + id + ",reason=UNAUTHORISED");
-            throw new SecurityException("Only the central authority may perform this action");
-        }
+        ensureCentralAuthority(actor, "CREATE_IDENTITY", id);
 
         if (repository.exists(id)) {
             auditLog.record("CREATE_IDENTITY_REJECTED", "id=" + id + ",reason=DUPLICATE");
@@ -39,9 +35,9 @@ public class ManagementServiceImpl implements ManagementService {
 
     @Override
     public DigitalID updateName(String id, String fullName, OrganisationType actor) {
-        ensureCentralAuthority(actor);
+        ensureCentralAuthority(actor, "UPDATE_NAME", id);
         DigitalID digitalID = loadIdentity(id);
-        String previousName = digitalID.getFullName(); // capture before change
+        String previousName = digitalID.getFullName();
 
         if (digitalID.getStatus() == DigitalIDStatus.REVOKED) {
             auditLog.record("UPDATE_NAME_REJECTED", "id=" + id + ",reason=REVOKED");
@@ -56,10 +52,9 @@ public class ManagementServiceImpl implements ManagementService {
 
     @Override
     public DigitalID changeStatus(String id, DigitalIDStatus newStatus, OrganisationType actor) {
-        ensureCentralAuthority(actor);
-        Objects.requireNonNull(newStatus, "newStatus");
+        ensureCentralAuthority(actor, "CHANGE_STATUS", id);
         DigitalID digitalID = loadIdentity(id);
-        DigitalIDStatus previousStatus = digitalID.getStatus(); // capture before any change
+        DigitalIDStatus previousStatus = digitalID.getStatus();
 
         if (previousStatus == newStatus) {
             auditLog.record("CHANGE_STATUS_NO_OP", "id=" + id + ",status=" + newStatus);
@@ -81,7 +76,7 @@ public class ManagementServiceImpl implements ManagementService {
 
     @Override
     public DigitalID setRestricted(String id, boolean restricted, OrganisationType actor) {
-        ensureCentralAuthority(actor);
+        ensureCentralAuthority(actor, "SET_RESTRICTED", id);
         DigitalID digitalID = loadIdentity(id);
 
         if (digitalID.getStatus() == DigitalIDStatus.REVOKED) {
@@ -95,14 +90,16 @@ public class ManagementServiceImpl implements ManagementService {
         return digitalID;
     }
 
+
     private DigitalID loadIdentity(String id) {
         return repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Digital ID not found: " + id));
     }
 
-    private void ensureCentralAuthority(OrganisationType actor) {
+    private void ensureCentralAuthority(OrganisationType actor, String rejectedAction, String id) {
         Objects.requireNonNull(actor, "actor");
         if (actor != OrganisationType.CENTRAL_AUTHORITY) {
+            auditLog.record(rejectedAction + "_REJECTED", "id=" + id + ",reason=UNAUTHORISED");
             throw new SecurityException("Only the central authority may perform this action");
         }
     }
