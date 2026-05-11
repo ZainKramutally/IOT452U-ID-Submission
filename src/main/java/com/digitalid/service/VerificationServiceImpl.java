@@ -63,15 +63,8 @@ public class VerificationServiceImpl implements VerificationService {
                     "Tax authority verification requires both periodStart and periodEnd"
             );
         }
-        if (periodStart.isAfter(periodEnd)) {
-            throw new IllegalArgumentException(
-                    "Tax authority verification requires periodStart to be on or before periodEnd"
-            );
-        }
 
-        boolean suspendedDuringPeriod = identity.getStatusHistory().stream()
-                .filter(sc -> sc.status() == DigitalIDStatus.SUSPENDED)
-                .anyMatch(sc -> isBetween(sc, periodStart, periodEnd));
+        boolean suspendedDuringPeriod = wasSuspendedDuringPeriod(identity, periodStart, periodEnd);
 
         if (suspendedDuringPeriod) {
             return new VerificationResult(true, false, ReasonCode.SUSPENDED_DURING_PERIOD, null);
@@ -83,6 +76,37 @@ public class VerificationServiceImpl implements VerificationService {
 
         return new VerificationResult(true, true, ReasonCode.VALID, null);
     }
+
+     //Overlap exists when the suspension started before the period ended and ended after the period started
+
+    private boolean wasSuspendedDuringPeriod(DigitalID identity,
+                                             LocalDate periodStart,
+                                             LocalDate periodEnd) {
+        var history = identity.getStatusHistory();
+
+        for (int i = 0; i < history.size(); i++) {
+            StatusChange current = history.get(i);
+
+            if (current.status() != DigitalIDStatus.SUSPENDED) {
+                continue;
+            }
+
+            LocalDate suspensionStart = current.changedAt().atZone(ZoneOffset.UTC).toLocalDate();
+            LocalDate suspensionEnd = (i + 1 < history.size())
+                    ? history.get(i + 1).changedAt().atZone(ZoneOffset.UTC).toLocalDate()
+                    : null; // still suspended with no end date
+
+            boolean overlaps = !suspensionStart.isAfter(periodEnd)
+                    && (suspensionEnd == null || !suspensionEnd.isBefore(periodStart));
+
+            if (overlaps) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 
     private VerificationResult evaluateForDrivingLicence(DigitalID identity) {
         if (identity.getStatus() != DigitalIDStatus.ACTIVE) {
@@ -102,11 +126,5 @@ public class VerificationServiceImpl implements VerificationService {
         return new VerificationResult(true, active, active ? ReasonCode.VALID : ReasonCode.INACTIVE, null);
     }
 
-    private boolean isBetween(StatusChange sc, LocalDate periodStart, LocalDate periodEnd) {
-        var periodStartInclusiveUtc = periodStart.atStartOfDay().toInstant(ZoneOffset.UTC);
-        var periodEndExclusiveUtc = periodEnd.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
-        var changedAtUtc = sc.changedAt();
 
-        return !changedAtUtc.isBefore(periodStartInclusiveUtc) && changedAtUtc.isBefore(periodEndExclusiveUtc);
-    }
 }

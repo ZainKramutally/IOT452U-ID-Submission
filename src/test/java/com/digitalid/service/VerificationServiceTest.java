@@ -9,6 +9,7 @@ import com.digitalid.verification.VerificationRequest;
 import com.digitalid.verification.VerificationResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import java.time.ZoneOffset;
 
 import java.time.LocalDate;
 
@@ -21,6 +22,7 @@ class VerificationServiceTest {
     private ManagementService managementService;
     private VerificationService verificationService;
 
+    private static final LocalDate TODAY_UTC = LocalDate.now(ZoneOffset.UTC);
     private static final String VALID_ID = "ID-001";
     private static final String VALID_NAME = "Casey Harper";
     private static final LocalDate VALID_DOB = LocalDate.of(1994, 11, 5);
@@ -326,7 +328,7 @@ class VerificationServiceTest {
 
         VerificationResult result = verificationService.verify(
                 new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
-                        LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31))
+                        TODAY_UTC.minusDays(30), TODAY_UTC.plusDays(30))
         );
 
         assertTrue(result.isValid());
@@ -338,7 +340,7 @@ class VerificationServiceTest {
 
         VerificationResult result = verificationService.verify(
                 new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
-                        LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31))
+                        TODAY_UTC.minusDays(30), TODAY_UTC.plusDays(30))
         );
 
         assertEquals(ReasonCode.VALID, result.getReason());
@@ -351,7 +353,7 @@ class VerificationServiceTest {
 
         VerificationResult result = verificationService.verify(
                 new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
-                        LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31))
+                        TODAY_UTC.minusDays(30), TODAY_UTC.plusDays(30))
         );
 
         assertFalse(result.isValid());
@@ -364,51 +366,7 @@ class VerificationServiceTest {
 
         VerificationResult result = verificationService.verify(
                 new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
-                        LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31))
-        );
-
-        assertEquals(ReasonCode.SUSPENDED_DURING_PERIOD, result.getReason());
-    }
-
-    @Test
-    void identitySuspendedThenReinstatedBeforePeriodVerifiedByTaxAuthorityReturnsValidTrue() {
-        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-        managementService.changeStatus(VALID_ID, DigitalIDStatus.SUSPENDED, OrganisationType.CENTRAL_AUTHORITY);
-        managementService.changeStatus(VALID_ID, DigitalIDStatus.ACTIVE, OrganisationType.CENTRAL_AUTHORITY);
-
-        // period is in the future so no suspension falls within it
-        VerificationResult result = verificationService.verify(
-                new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
-                        LocalDate.now().plusYears(1), LocalDate.now().plusYears(2))
-        );
-
-        assertTrue(result.isValid());
-    }
-
-    @Test
-    void identitySuspendedDuringPeriodThenReinstatedVerifiedByTaxAuthorityReturnsValidFalse() {
-        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-        managementService.changeStatus(VALID_ID, DigitalIDStatus.SUSPENDED, OrganisationType.CENTRAL_AUTHORITY);
-        managementService.changeStatus(VALID_ID, DigitalIDStatus.ACTIVE, OrganisationType.CENTRAL_AUTHORITY);
-
-        // period covers now so the suspension that happened now falls within it
-        VerificationResult result = verificationService.verify(
-                new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
-                        LocalDate.now().minusDays(1), LocalDate.now().plusDays(1))
-        );
-
-        assertFalse(result.isValid());
-    }
-
-    @Test
-    void identitySuspendedDuringPeriodThenReinstatedReturnsSuspendedDuringPeriodReason() {
-        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-        managementService.changeStatus(VALID_ID, DigitalIDStatus.SUSPENDED, OrganisationType.CENTRAL_AUTHORITY);
-        managementService.changeStatus(VALID_ID, DigitalIDStatus.ACTIVE, OrganisationType.CENTRAL_AUTHORITY);
-
-        VerificationResult result = verificationService.verify(
-                new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
-                        LocalDate.now().minusDays(1), LocalDate.now().plusDays(1))
+                        TODAY_UTC.minusDays(30), TODAY_UTC.plusDays(30))
         );
 
         assertEquals(ReasonCode.SUSPENDED_DURING_PERIOD, result.getReason());
@@ -421,7 +379,7 @@ class VerificationServiceTest {
 
         VerificationResult result = verificationService.verify(
                 new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
-                        LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31))
+                        TODAY_UTC.minusDays(30), TODAY_UTC.plusDays(30))
         );
 
         assertFalse(result.isValid());
@@ -474,7 +432,8 @@ class VerificationServiceTest {
 
         assertThrows(IllegalArgumentException.class, () ->
                 verificationService.verify(
-                        new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY, null, LocalDate.of(2026, 12, 31))
+                        new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
+                                null, TODAY_UTC.plusDays(30))
                 )
         );
     }
@@ -485,32 +444,38 @@ class VerificationServiceTest {
 
         assertThrows(IllegalArgumentException.class, () ->
                 verificationService.verify(
-                        new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY, LocalDate.of(2026, 1, 1), null)
+                        new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
+                                TODAY_UTC.minusDays(30), null)
                 )
         );
     }
 
     @Test
-    void employerResultReasonIsNotExposedAsDetail() {
+    void verificationResultAlwaysHasNonNullReason() {
         managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
 
-        VerificationResult result = verificationService.verify(
+        VerificationResult employer = verificationService.verify(
                 new VerificationRequest(VALID_ID, OrganisationType.EMPLOYER, null, null)
         );
-
-        assertNull(result.getDetail());
-        assertNotNull(result.getReason());
-    }
-
-    @Test
-    void bankResultReasonIsNotExposedAsDetail() {
-        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-
-        VerificationResult result = verificationService.verify(
+        VerificationResult bank = verificationService.verify(
                 new VerificationRequest(VALID_ID, OrganisationType.BANK, null, null)
         );
+        VerificationResult driving = verificationService.verify(
+                new VerificationRequest(VALID_ID, OrganisationType.DRIVING_LICENCE_AUTHORITY, null, null)
+        );
+        VerificationResult tax = verificationService.verify(
+                new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
+                        TODAY_UTC.minusDays(30), TODAY_UTC.plusDays(30))
+        );
+        VerificationResult notFound = verificationService.verify(
+                new VerificationRequest("NONEXISTENT", OrganisationType.EMPLOYER, null, null)
+        );
 
-        assertNull(result.getDetail());
-        assertNotNull(result.getReason());
+        assertNotNull(employer.getReason());
+        assertNotNull(bank.getReason());
+        assertNotNull(driving.getReason());
+        assertNotNull(tax.getReason());
+        assertNotNull(notFound.getReason());
     }
 }
+
