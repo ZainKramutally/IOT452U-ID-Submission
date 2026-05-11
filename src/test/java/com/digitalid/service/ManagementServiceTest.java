@@ -22,6 +22,8 @@ class ManagementServiceTest {
     private static final String VALID_ID = "ID-001";
     private static final String VALID_NAME = "Taylor Quinn";
     private static final LocalDate VALID_DOB = LocalDate.of(1992, 3, 15);
+    private static final String RESTRICTION_REASON = "LICENCE_REVIEW";
+    private static final LocalDate RESTRICTION_EXPIRY = LocalDate.of(2099, 1, 1);
 
     @BeforeEach
     void setUp() {
@@ -379,7 +381,8 @@ class ManagementServiceTest {
     @Test
     void setRestrictedToTrueOnActiveIdentitySucceeds() {
         service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-        service.setRestricted(VALID_ID, true, OrganisationType.CENTRAL_AUTHORITY);
+        service.setRestricted(VALID_ID, true, RESTRICTION_REASON, RESTRICTION_EXPIRY,
+                OrganisationType.CENTRAL_AUTHORITY);
 
         assertTrue(repository.findById(VALID_ID).orElseThrow().isRestricted());
     }
@@ -387,8 +390,9 @@ class ManagementServiceTest {
     @Test
     void setRestrictedToFalseRemovesRestriction() {
         service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-        service.setRestricted(VALID_ID, true, OrganisationType.CENTRAL_AUTHORITY);
-        service.setRestricted(VALID_ID, false, OrganisationType.CENTRAL_AUTHORITY);
+        service.setRestricted(VALID_ID, true, RESTRICTION_REASON, RESTRICTION_EXPIRY,
+                OrganisationType.CENTRAL_AUTHORITY);
+        service.setRestricted(VALID_ID, false, "LIFTED", null, OrganisationType.CENTRAL_AUTHORITY);
 
         assertFalse(repository.findById(VALID_ID).orElseThrow().isRestricted());
     }
@@ -397,7 +401,8 @@ class ManagementServiceTest {
     void setRestrictedOnSuspendedIdentitySucceeds() {
         service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
         service.changeStatus(VALID_ID, DigitalIDStatus.SUSPENDED, OrganisationType.CENTRAL_AUTHORITY);
-        service.setRestricted(VALID_ID, true, OrganisationType.CENTRAL_AUTHORITY);
+        service.setRestricted(VALID_ID, true, RESTRICTION_REASON, RESTRICTION_EXPIRY,
+                OrganisationType.CENTRAL_AUTHORITY);
 
         assertTrue(repository.findById(VALID_ID).orElseThrow().isRestricted());
     }
@@ -408,7 +413,8 @@ class ManagementServiceTest {
         service.changeStatus(VALID_ID, DigitalIDStatus.REVOKED, OrganisationType.CENTRAL_AUTHORITY);
 
         assertThrows(IllegalStateException.class, () ->
-                service.setRestricted(VALID_ID, true, OrganisationType.CENTRAL_AUTHORITY)
+                service.setRestricted(VALID_ID, true, RESTRICTION_REASON, RESTRICTION_EXPIRY,
+                        OrganisationType.CENTRAL_AUTHORITY)
         );
     }
 
@@ -419,7 +425,8 @@ class ManagementServiceTest {
         int eventsBefore = auditLog.getEvents().size();
 
         assertThrows(IllegalStateException.class, () ->
-                service.setRestricted(VALID_ID, true, OrganisationType.CENTRAL_AUTHORITY)
+                service.setRestricted(VALID_ID, true, RESTRICTION_REASON, RESTRICTION_EXPIRY,
+                        OrganisationType.CENTRAL_AUTHORITY)
         );
 
         assertTrue(auditLog.getEvents().size() > eventsBefore);
@@ -430,24 +437,29 @@ class ManagementServiceTest {
         service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
 
         assertThrows(SecurityException.class, () ->
-                service.setRestricted(VALID_ID, true, OrganisationType.EMPLOYER)
+                service.setRestricted(VALID_ID, true, RESTRICTION_REASON, RESTRICTION_EXPIRY,
+                        OrganisationType.EMPLOYER)
         );
     }
 
     @Test
     void setRestrictedOnNonExistentIdThrowsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () ->
-                service.setRestricted("NONEXISTENT", true, OrganisationType.CENTRAL_AUTHORITY)
+                service.setRestricted("NONEXISTENT", true, RESTRICTION_REASON, RESTRICTION_EXPIRY,
+                        OrganisationType.CENTRAL_AUTHORITY)
         );
     }
 
     @Test
     void setRestrictedRecordsAuditEvent() {
         service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-        service.setRestricted(VALID_ID, true, OrganisationType.CENTRAL_AUTHORITY);
+        service.setRestricted(VALID_ID, true, RESTRICTION_REASON, RESTRICTION_EXPIRY,
+                OrganisationType.CENTRAL_AUTHORITY);
 
         AuditEvent event = auditLog.getEvents().get(1);
         assertEquals("SET_RESTRICTED", event.action());
+        assertTrue(event.details().contains("reason=" + RESTRICTION_REASON));
+        assertTrue(event.details().contains("expiresOn=" + RESTRICTION_EXPIRY));
     }
 
     @Test
@@ -468,5 +480,36 @@ class ManagementServiceTest {
         AuditEvent updateEvent = auditLog.getEvents().get(1);
         assertTrue(updateEvent.details().contains("from=" + VALID_NAME));
         assertTrue(updateEvent.details().contains("to=New Name"));
+    }
+
+    @Test
+    void setRestrictedWithBlankReasonThrowsIllegalArgumentException() {
+        service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+
+        assertThrows(IllegalArgumentException.class, () ->
+                service.setRestricted(VALID_ID, true, "   ", RESTRICTION_EXPIRY,
+                        OrganisationType.CENTRAL_AUTHORITY)
+        );
+    }
+
+    @Test
+    void setRestrictedWithNullExpiryThrowsIllegalArgumentException() {
+        service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+
+        assertThrows(IllegalArgumentException.class, () ->
+                service.setRestricted(VALID_ID, true, RESTRICTION_REASON, null,
+                        OrganisationType.CENTRAL_AUTHORITY)
+        );
+    }
+
+    @Test
+    void setRestrictedNormalizesReasonInAuditDetails() {
+        service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+
+        service.setRestricted(VALID_ID, true, "  REVIEW  ", RESTRICTION_EXPIRY,
+                OrganisationType.CENTRAL_AUTHORITY);
+
+        AuditEvent event = auditLog.getEvents().get(1);
+        assertTrue(event.details().contains("reason=REVIEW"));
     }
 }
