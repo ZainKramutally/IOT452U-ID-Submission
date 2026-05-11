@@ -84,6 +84,7 @@ public class ManagementServiceImpl implements ManagementService {
         if (!previousStatus.canTransitionTo(checkedStatus)) {
             auditLog.record(AuditActions.rejected(AuditActions.CHANGE_STATUS), details(
                     detail(AuditDetailKeys.ID, checkedId),
+                    detail(AuditDetailKeys.REASON, AuditReasons.INVALID_STATUS_TRANSITION),
                     detail(AuditDetailKeys.FROM, previousStatus),
                     detail(AuditDetailKeys.TO, checkedStatus)
             ));
@@ -114,6 +115,10 @@ public class ManagementServiceImpl implements ManagementService {
 
         String normalizedReason = requireText(reason, "reason", AuditActions.SET_RESTRICTED, checkedId,
                 AuditReasons.MISSING_REASON);
+        if (restricted && expiresOn == null) {
+            recordRejection(AuditActions.SET_RESTRICTED, checkedId, AuditReasons.MISSING_EXPIRES_ON);
+            throw new IllegalArgumentException("expiresOn must not be null when restricted is true");
+        }
         LocalDate normalizedExpiry = restricted ? expiresOn : null;
 
         digitalID.setRestricted(restricted, normalizedReason, normalizedExpiry);

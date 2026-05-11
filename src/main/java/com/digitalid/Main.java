@@ -181,6 +181,12 @@ public class Main {
         // SECTION 6 : VERIFICATION: DRIVING LICENCE AUTHORITY
         printHeader("SECTION 6 : VERIFICATION: DRIVING LICENCE AUTHORITY");
 
+        System.out.println("Re-applying active restriction to ID-1002 for this section...");
+        management.setRestricted("ID-1002", true, "LICENCE_REVIEW", TODAY_UTC.plusMonths(6),
+                OrganisationType.CENTRAL_AUTHORITY);
+        System.out.println("Restricted: "
+                + repository.findById("ID-1002").orElseThrow().isRestricted() + "\n");
+
         System.out.println("DRIVING_LICENCE_AUTHORITY verifying active unrestricted ID-1001...");
         printResult(verification.verify(
                 new VerificationRequest("ID-1001", OrganisationType.DRIVING_LICENCE_AUTHORITY, null, null)
