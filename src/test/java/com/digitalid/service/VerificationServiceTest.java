@@ -1,5 +1,7 @@
 package com.digitalid.service;
 
+import com.digitalid.audit.AuditActions;
+import com.digitalid.audit.AuditEvent;
 import com.digitalid.audit.AuditLog;
 import com.digitalid.domain.OrganisationType;
 import com.digitalid.domain.ReasonCode;
@@ -25,6 +27,8 @@ class VerificationServiceTest {
     private static final String VALID_ID = "ID-001";
     private static final String VALID_NAME = "Casey Harper";
     private static final LocalDate VALID_DOB = LocalDate.of(1994, 11, 5);
+    private static final String RESTRICTION_REASON = "LICENCE_REVIEW";
+    private static final LocalDate RESTRICTION_EXPIRY = LocalDate.of(2099, 1, 1);
 
     @BeforeEach
     void setUp() {
@@ -183,7 +187,8 @@ class VerificationServiceTest {
     @Test
     void restrictedIdentityVerifiedByEmployerReturnsValidTrue() {
         managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-        managementService.setRestricted(VALID_ID, true, OrganisationType.CENTRAL_AUTHORITY);
+        managementService.setRestricted(VALID_ID, true, RESTRICTION_REASON, RESTRICTION_EXPIRY,
+                OrganisationType.CENTRAL_AUTHORITY);
 
         VerificationResult result = verificationService.verify(
                 new VerificationRequest(VALID_ID, OrganisationType.EMPLOYER, null, null)
@@ -241,7 +246,8 @@ class VerificationServiceTest {
     @Test
     void restrictedIdentityVerifiedByBankReturnsValidTrue() {
         managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-        managementService.setRestricted(VALID_ID, true, OrganisationType.CENTRAL_AUTHORITY);
+        managementService.setRestricted(VALID_ID, true, RESTRICTION_REASON, RESTRICTION_EXPIRY,
+                OrganisationType.CENTRAL_AUTHORITY);
 
         VerificationResult result = verificationService.verify(
                 new VerificationRequest(VALID_ID, OrganisationType.BANK, null, null)
@@ -264,7 +270,8 @@ class VerificationServiceTest {
     @Test
     void activeRestrictedIdentityVerifiedByDrivingLicenceAuthorityReturnsValidFalse() {
         managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-        managementService.setRestricted(VALID_ID, true, OrganisationType.CENTRAL_AUTHORITY);
+        managementService.setRestricted(VALID_ID, true, RESTRICTION_REASON, RESTRICTION_EXPIRY,
+                OrganisationType.CENTRAL_AUTHORITY);
 
         VerificationResult result = verificationService.verify(
                 new VerificationRequest(VALID_ID, OrganisationType.DRIVING_LICENCE_AUTHORITY, null, null)
@@ -276,7 +283,8 @@ class VerificationServiceTest {
     @Test
     void activeRestrictedIdentityVerifiedByDrivingLicenceAuthorityReturnsRestrictedReason() {
         managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-        managementService.setRestricted(VALID_ID, true, OrganisationType.CENTRAL_AUTHORITY);
+        managementService.setRestricted(VALID_ID, true, RESTRICTION_REASON, RESTRICTION_EXPIRY,
+                OrganisationType.CENTRAL_AUTHORITY);
 
         VerificationResult result = verificationService.verify(
                 new VerificationRequest(VALID_ID, OrganisationType.DRIVING_LICENCE_AUTHORITY, null, null)
@@ -426,6 +434,25 @@ class VerificationServiceTest {
     }
 
     @Test
+    void centralAuthorityCallingVerifyRecordsRejectedAuditEvent() {
+        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+        int eventsBefore = auditLog.getEvents().size();
+
+        assertThrows(SecurityException.class, () ->
+                verificationService.verify(
+                        new VerificationRequest(VALID_ID, OrganisationType.CENTRAL_AUTHORITY, null, null)
+                )
+        );
+
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
+        assertTrue(auditLog.getEvents().size() > eventsBefore);
+        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
+        assertTrue(event.details().contains("id=" + VALID_ID));
+        assertTrue(event.details().contains("org=" + OrganisationType.CENTRAL_AUTHORITY));
+        assertTrue(event.details().contains("reason=UNAUTHORISED"));
+    }
+
+    @Test
     void taxAuthorityRequestWithNullPeriodStartThrowsIllegalArgumentException() {
         managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
 
@@ -438,6 +465,26 @@ class VerificationServiceTest {
     }
 
     @Test
+    void taxAuthorityRequestWithNullPeriodStartRecordsRejectedAuditEvent() {
+        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+        int eventsBefore = auditLog.getEvents().size();
+
+        assertThrows(IllegalArgumentException.class, () ->
+                verificationService.verify(
+                        new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
+                                null, TODAY_UTC.plusDays(30))
+                )
+        );
+
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
+        assertTrue(auditLog.getEvents().size() > eventsBefore);
+        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
+        assertTrue(event.details().contains("id=" + VALID_ID));
+        assertTrue(event.details().contains("org=" + OrganisationType.TAX_AUTHORITY));
+        assertTrue(event.details().contains("reason=MISSING_PERIOD_START"));
+    }
+
+    @Test
     void taxAuthorityRequestWithNullPeriodEndThrowsIllegalArgumentException() {
         managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
 
@@ -447,6 +494,26 @@ class VerificationServiceTest {
                                 TODAY_UTC.minusDays(30), null)
                 )
         );
+    }
+
+    @Test
+    void taxAuthorityRequestWithNullPeriodEndRecordsRejectedAuditEvent() {
+        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+        int eventsBefore = auditLog.getEvents().size();
+
+        assertThrows(IllegalArgumentException.class, () ->
+                verificationService.verify(
+                        new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
+                                TODAY_UTC.minusDays(30), null)
+                )
+        );
+
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
+        assertTrue(auditLog.getEvents().size() > eventsBefore);
+        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
+        assertTrue(event.details().contains("id=" + VALID_ID));
+        assertTrue(event.details().contains("org=" + OrganisationType.TAX_AUTHORITY));
+        assertTrue(event.details().contains("reason=MISSING_PERIOD_END"));
     }
 
     @Test
@@ -477,4 +544,3 @@ class VerificationServiceTest {
         assertNotNull(notFound.reason());
     }
 }
-

@@ -76,7 +76,7 @@ public class ManagementServiceImpl implements ManagementService {
     }
 
     @Override
-    public void setRestricted(String id, boolean restricted, OrganisationType actor) {
+    public void setRestricted(String id, boolean restricted, String reason, LocalDate expiresOn, OrganisationType actor) {
         ensureCentralAuthority(actor, AuditActions.SET_RESTRICTED, id);
         DigitalID digitalID = loadIdentity(id);
 
@@ -85,9 +85,13 @@ public class ManagementServiceImpl implements ManagementService {
             throw new IllegalStateException("Digital ID is revoked: " + digitalID.getId());
         }
 
-        digitalID.setRestricted(restricted);
+        digitalID.setRestricted(restricted, reason, expiresOn);
         repository.save(digitalID);
-        auditLog.record(AuditActions.SET_RESTRICTED, "id=" + id + ",restricted=" + restricted);
+        String details = "id=" + id + ",restricted=" + restricted + ",reason=" + reason;
+        if (restricted) {
+            details += ",expiresOn=" + expiresOn;
+        }
+        auditLog.record(AuditActions.SET_RESTRICTED, details);
     }
 
 
