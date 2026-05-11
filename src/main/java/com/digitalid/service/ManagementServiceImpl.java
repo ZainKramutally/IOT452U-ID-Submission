@@ -76,7 +76,7 @@ public class ManagementServiceImpl implements ManagementService {
     }
 
     @Override
-    public void setRestricted(String id, boolean restricted, OrganisationType actor) {
+    public void setRestricted(String id, boolean restricted, String reason, LocalDate expiresOn, OrganisationType actor) {
         ensureCentralAuthority(actor, AuditActions.SET_RESTRICTED, id);
         DigitalID digitalID = loadIdentity(id);
 
@@ -85,9 +85,22 @@ public class ManagementServiceImpl implements ManagementService {
             throw new IllegalStateException("Digital ID is revoked: " + digitalID.getId());
         }
 
-        digitalID.setRestricted(restricted);
+        String normalizedReason = normalizeReason(reason);
+        LocalDate normalizedExpiry = null;
+        if (restricted) {
+            if (expiresOn == null) {
+                throw new IllegalArgumentException("expiresOn must not be null when restricted");
+            }
+            normalizedExpiry = expiresOn;
+        }
+
+        digitalID.setRestricted(restricted, normalizedReason, normalizedExpiry);
         repository.save(digitalID);
-        auditLog.record(AuditActions.SET_RESTRICTED, "id=" + id + ",restricted=" + restricted);
+        String details = "id=" + id + ",restricted=" + restricted + ",reason=" + normalizedReason;
+        if (restricted) {
+            details += ",expiresOn=" + normalizedExpiry;
+        }
+        auditLog.record(AuditActions.SET_RESTRICTED, details);
     }
 
 
@@ -104,4 +117,12 @@ public class ManagementServiceImpl implements ManagementService {
         }
     }
 
+    private static String normalizeReason(String reason) {
+        Objects.requireNonNull(reason, "reason");
+        String trimmed = reason.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("reason must not be blank");
+        }
+        return trimmed;
+    }
 }

@@ -3,6 +3,7 @@ package com.digitalid.domain;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -28,7 +29,7 @@ class DigitalIDTest {
         DigitalID digitalID = new DigitalID("ID-2", "Jordan Lee", dob);
 
         digitalID.updateFullName("Jordan L.");
-        digitalID.setRestricted(true);
+        digitalID.setRestricted(true, "REVIEW", LocalDate.of(2099, 1, 1));
 
         assertEquals("ID-2", digitalID.getId());
         assertEquals(dob, digitalID.getDateOfBirth());
@@ -56,11 +57,42 @@ class DigitalIDTest {
     }
 
     @Test
+    void restrictionHistoryAppendsWithDetails() {
+        DigitalID digitalID = new DigitalID("ID-7", "Rory Lane", LocalDate.of(1991, 2, 10));
+
+        digitalID.setRestricted(true, "LICENCE_REVIEW", LocalDate.of(2099, 1, 1));
+        digitalID.setRestricted(false, "LIFTED", null);
+
+        assertEquals(2, digitalID.getRestrictionHistory().size());
+        RestrictionChange latest = digitalID.getRestrictionHistory().get(1);
+        assertFalse(latest.restricted());
+        assertEquals("LIFTED", latest.reason());
+    }
+
+    @Test
+    void restrictionExpiresWhenPastDate() {
+        DigitalID digitalID = new DigitalID("ID-8", "Sam Park", LocalDate.of(1989, 4, 12));
+
+        digitalID.setRestricted(true, "TEMP_HOLD", LocalDate.now(ZoneOffset.UTC).minusDays(1));
+
+        assertFalse(digitalID.isRestricted());
+    }
+
+    @Test
     void statusHistoryIsUnmodifiable() {
-        DigitalID digitalID = new DigitalID("ID-5", "Jordan Blake", LocalDate.of(1988, 7, 15));
+        DigitalID digitalID = new DigitalID("ID-9", "Dee Chen", LocalDate.of(1995, 9, 3));
 
         assertThrows(UnsupportedOperationException.class, () ->
                 digitalID.getStatusHistory().clear()
+        );
+    }
+
+    @Test
+    void restrictionHistoryIsUnmodifiable() {
+        DigitalID digitalID = new DigitalID("ID-10", "Dee Chen", LocalDate.of(1995, 9, 3));
+
+        assertThrows(UnsupportedOperationException.class, () ->
+                digitalID.getRestrictionHistory().clear()
         );
     }
 
@@ -88,4 +120,3 @@ class DigitalIDTest {
         assertFalse(DigitalIDStatus.REVOKED.canTransitionTo(DigitalIDStatus.SUSPENDED));
     }
 }
-

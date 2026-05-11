@@ -104,8 +104,55 @@ public class Main {
         printHeader("SECTION 4 : RESTRICTION MANAGEMENT");
 
         System.out.println("Setting restriction flag on ID-1002 (Bob Patel)...");
-        management.setRestricted("ID-1002", true, OrganisationType.CENTRAL_AUTHORITY);
+        management.setRestricted("ID-1002", true, "LICENCE_REVIEW", TODAY_UTC.plusMonths(6),
+                OrganisationType.CENTRAL_AUTHORITY);
         System.out.println("Restricted: " + repository.findById("ID-1002").orElseThrow().isRestricted());
+        System.out.println("Restriction history entries: "
+                + repository.findById("ID-1002").orElseThrow().getRestrictionHistory().size());
+
+        System.out.println("\nLifting restriction on ID-1002...");
+        management.setRestricted("ID-1002", false, "LIFTED", null, OrganisationType.CENTRAL_AUTHORITY);
+        System.out.println("Restricted: " + repository.findById("ID-1002").orElseThrow().isRestricted());
+        System.out.println("Restriction history entries: "
+                + repository.findById("ID-1002").orElseThrow().getRestrictionHistory().size());
+
+        System.out.println("\nApplying an expired restriction on ID-1002...");
+        management.setRestricted("ID-1002", true, "EXPIRED_TEST", TODAY_UTC.minusDays(1),
+                OrganisationType.CENTRAL_AUTHORITY);
+        System.out.println("Restricted (should be false): "
+                + repository.findById("ID-1002").orElseThrow().isRestricted());
+
+        System.out.println("\nAttempting restriction with missing expiry (should fail)...");
+        try {
+            management.setRestricted("ID-1002", true, "MISSING_EXPIRY", null,
+                    OrganisationType.CENTRAL_AUTHORITY);
+        } catch (IllegalArgumentException e) {
+            System.out.println("Rejected as expected: " + e.getMessage());
+        }
+
+        System.out.println("\nAttempting restriction with blank reason (should fail)...");
+        try {
+            management.setRestricted("ID-1002", true, "   ", TODAY_UTC.plusDays(30),
+                    OrganisationType.CENTRAL_AUTHORITY);
+        } catch (IllegalArgumentException e) {
+            System.out.println("Rejected as expected: " + e.getMessage());
+        }
+
+        System.out.println("\nAttempting restriction on revoked ID-1003 (should fail)...");
+        try {
+            management.setRestricted("ID-1003", true, "REVOCATION_BLOCK", TODAY_UTC.plusDays(30),
+                    OrganisationType.CENTRAL_AUTHORITY);
+        } catch (IllegalStateException e) {
+            System.out.println("Rejected as expected: " + e.getMessage());
+        }
+
+        System.out.println("\nAttempting restriction as EMPLOYER (unauthorised)...");
+        try {
+            management.setRestricted("ID-1002", true, "UNAUTHORISED", TODAY_UTC.plusDays(30),
+                    OrganisationType.EMPLOYER);
+        } catch (SecurityException e) {
+            System.out.println("Rejected as expected: " + e.getMessage());
+        }
 
         // SECTION 5 : VERIFICATION: EMPLOYER AND BANK
         printHeader("SECTION 5 : VERIFICATION: EMPLOYER AND BANK");
@@ -194,6 +241,15 @@ public class Main {
             System.out.println("Rejected as expected: " + e.getMessage());
         }
 
+        System.out.println("CENTRAL_AUTHORITY attempting to verify missing ID (not permitted)...");
+        try {
+            verification.verify(
+                    new VerificationRequest("ID-XXXX", OrganisationType.CENTRAL_AUTHORITY, null, null)
+            );
+        } catch (SecurityException e) {
+            System.out.println("Rejected as expected: " + e.getMessage());
+        }
+
         // SECTION 10 : FULL AUDIT LOG
         printHeader("SECTION 10 : FULL AUDIT LOG");
 
@@ -215,3 +271,4 @@ public class Main {
         System.out.println();
     }
 }
+

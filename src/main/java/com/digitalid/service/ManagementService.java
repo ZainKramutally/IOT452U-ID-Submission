@@ -38,9 +38,10 @@ public interface ManagementService {
 
     /**
      * Sets or removes the restriction flag on an existing Digital ID.
+     * Reason is always required, and expiresOn is required when restricted is true.
      * Throws SecurityException if the actor is not CENTRAL_AUTHORITY.
      * Throws IllegalArgumentException if the ID does not exist.
      * Throws IllegalStateException if the Digital ID is REVOKED.
      */
-    void setRestricted(String id, boolean restricted, OrganisationType actor);
+    void setRestricted(String id, boolean restricted, String reason, LocalDate expiresOn, OrganisationType actor);
 }
