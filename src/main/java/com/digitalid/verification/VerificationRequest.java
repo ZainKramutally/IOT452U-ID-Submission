@@ -8,12 +8,15 @@ import java.util.Objects;
 public class VerificationRequest {
     private final String digitalId;
     private final OrganisationType organisationType;
-    private final LocalDate onDate;
+    private final LocalDate periodStart;
+    private final LocalDate periodEnd;
 
-    public VerificationRequest(String digitalId, OrganisationType organisationType, LocalDate onDate) {
+    public VerificationRequest(String digitalId, OrganisationType organisationType,
+                               LocalDate periodStart, LocalDate periodEnd) {
         this.digitalId = Objects.requireNonNull(digitalId, "digitalId");
         this.organisationType = Objects.requireNonNull(organisationType, "organisationType");
-        this.onDate = Objects.requireNonNull(onDate, "onDate");
+        this.periodStart = periodStart;
+        this.periodEnd = periodEnd;
     }
 
     public String getDigitalId() {
@@ -24,5 +27,11 @@ public class VerificationRequest {
         return organisationType;
     }
 
-}
+    public LocalDate getPeriodStart() {
+        return periodStart;
+    }
 
+    public LocalDate getPeriodEnd() {
+        return periodEnd;
+    }
+}
