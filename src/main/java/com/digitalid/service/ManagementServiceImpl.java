@@ -57,6 +57,7 @@ public class ManagementServiceImpl implements ManagementService {
     @Override
     public DigitalID changeStatus(String id, DigitalIDStatus newStatus, OrganisationType actor) {
         ensureCentralAuthority(actor);
+        Objects.requireNonNull(newStatus, "newStatus");
         DigitalID digitalID = loadIdentity(id);
         DigitalIDStatus previousStatus = digitalID.getStatus(); // capture before any change
 
