@@ -103,7 +103,10 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     private boolean isBetween(StatusChange sc, LocalDate periodStart, LocalDate periodEnd) {
-        LocalDate changeDate = sc.changedAt().atZone(ZoneOffset.UTC).toLocalDate();
-        return !changeDate.isBefore(periodStart) && !changeDate.isAfter(periodEnd);
+        var periodStartInclusiveUtc = periodStart.atStartOfDay().toInstant(ZoneOffset.UTC);
+        var periodEndExclusiveUtc = periodEnd.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+        var changedAtUtc = sc.changedAt();
+
+        return !changedAtUtc.isBefore(periodStartInclusiveUtc) && changedAtUtc.isBefore(periodEndExclusiveUtc);
     }
 }
