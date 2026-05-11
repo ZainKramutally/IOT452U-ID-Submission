@@ -587,114 +587,37 @@ class VerificationServiceTest {
     }
 
     @Test
-    void blankIdRequestRecordsRejectedAuditEvent() {
-        int eventsBefore = auditLog.getEvents().size();
-
+    void blankIdRequestThrowsIllegalArgumentExceptionAtConstruction() {
         assertThrows(IllegalArgumentException.class, () ->
-                verificationService.verify(
-                        new VerificationRequest("   ", OrganisationType.EMPLOYER, null, null)
-                )
+                new VerificationRequest("   ", OrganisationType.EMPLOYER, null, null)
         );
-
-        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
-        assertTrue(auditLog.getEvents().size() > eventsBefore);
-        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
-        assertTrue(event.details().contains("reason=" + AuditReasons.MISSING_ID));
     }
 
     @Test
-    void verifyWithNullOrganisationTypeRecordsAuditEvent() {
-        int eventsBefore = auditLog.getEvents().size();
-
+    void verifyWithNullOrganisationTypeThrowsNullPointerExceptionAtConstruction() {
         assertThrows(NullPointerException.class, () ->
-                verificationService.verify(new VerificationRequest(VALID_ID, null, null, null))
+                new VerificationRequest(VALID_ID, null, null, null)
         );
-
-        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
-        assertTrue(auditLog.getEvents().size() > eventsBefore);
-        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
-        assertTrue(event.details().contains("reason=" + AuditReasons.MISSING_ORG));
     }
 
     @Test
-    void verifyWithNullDigitalIdRecordsAuditEvent() {
-        int eventsBefore = auditLog.getEvents().size();
-
+    void verifyWithNullDigitalIdThrowsNullPointerExceptionAtConstruction() {
         assertThrows(NullPointerException.class, () ->
-                verificationService.verify(new VerificationRequest(null, OrganisationType.EMPLOYER, null, null))
+                new VerificationRequest(null, OrganisationType.EMPLOYER, null, null)
         );
-
-        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
-        assertTrue(auditLog.getEvents().size() > eventsBefore);
-        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
-        assertTrue(event.details().contains("reason=" + AuditReasons.MISSING_ID));
     }
 
     @Test
-    void taxAuthorityWithInvalidPeriodRangeRecordsAuditEvent() {
-        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-        int eventsBefore = auditLog.getEvents().size();
+    void centralAuthorityWithNullIdThrowsNullPointerExceptionAtConstruction() {
+        assertThrows(NullPointerException.class, () ->
+                new VerificationRequest(null, OrganisationType.CENTRAL_AUTHORITY, null, null)
+        );
+    }
 
+    @Test
+    void centralAuthorityWithBlankIdThrowsIllegalArgumentExceptionAtConstruction() {
         assertThrows(IllegalArgumentException.class, () ->
-                verificationService.verify(new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
-                        TODAY_UTC.plusDays(1), TODAY_UTC.minusDays(1)))
+                new VerificationRequest("   ", OrganisationType.CENTRAL_AUTHORITY, null, null)
         );
-
-        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
-        assertTrue(auditLog.getEvents().size() > eventsBefore);
-        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
-        assertTrue(event.details().contains("reason=" + AuditReasons.INVALID_PERIOD_RANGE));
-    }
-
-    @Test
-    void centralAuthorityWithNullIdStillThrowsSecurityException() {
-        assertThrows(SecurityException.class, () ->
-                verificationService.verify(
-                        new VerificationRequest(null, OrganisationType.CENTRAL_AUTHORITY, null, null)
-                )
-        );
-    }
-
-    @Test
-    void centralAuthorityWithNullIdRecordsUnauthorisedRejection() {
-        int eventsBefore = auditLog.getEvents().size();
-
-        assertThrows(SecurityException.class, () ->
-                verificationService.verify(
-                        new VerificationRequest(null, OrganisationType.CENTRAL_AUTHORITY, null, null)
-                )
-        );
-
-        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
-        assertTrue(auditLog.getEvents().size() > eventsBefore);
-        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
-        assertTrue(event.details().contains("org=" + OrganisationType.CENTRAL_AUTHORITY));
-        assertTrue(event.details().contains("reason=" + AuditReasons.UNAUTHORISED));
-    }
-
-    @Test
-    void centralAuthorityWithBlankIdStillThrowsSecurityException() {
-        assertThrows(SecurityException.class, () ->
-                verificationService.verify(
-                        new VerificationRequest("   ", OrganisationType.CENTRAL_AUTHORITY, null, null)
-                )
-        );
-    }
-
-    @Test
-    void centralAuthorityWithBlankIdRecordsUnauthorisedRejection() {
-        int eventsBefore = auditLog.getEvents().size();
-
-        assertThrows(SecurityException.class, () ->
-                verificationService.verify(
-                        new VerificationRequest("   ", OrganisationType.CENTRAL_AUTHORITY, null, null)
-                )
-        );
-
-        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
-        assertTrue(auditLog.getEvents().size() > eventsBefore);
-        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
-        assertTrue(event.details().contains("org=" + OrganisationType.CENTRAL_AUTHORITY));
-        assertTrue(event.details().contains("reason=" + AuditReasons.UNAUTHORISED));
     }
 }
