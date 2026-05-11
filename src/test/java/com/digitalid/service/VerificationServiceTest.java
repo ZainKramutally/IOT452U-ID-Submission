@@ -12,9 +12,9 @@ import com.digitalid.verification.VerificationRequest;
 import com.digitalid.verification.VerificationResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.time.ZoneOffset;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -600,5 +600,101 @@ class VerificationServiceTest {
         assertTrue(auditLog.getEvents().size() > eventsBefore);
         assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
         assertTrue(event.details().contains("reason=" + AuditReasons.MISSING_ID));
+    }
+
+    @Test
+    void verifyWithNullOrganisationTypeRecordsAuditEvent() {
+        int eventsBefore = auditLog.getEvents().size();
+
+        assertThrows(NullPointerException.class, () ->
+                verificationService.verify(new VerificationRequest(VALID_ID, null, null, null))
+        );
+
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
+        assertTrue(auditLog.getEvents().size() > eventsBefore);
+        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
+        assertTrue(event.details().contains("reason=" + AuditReasons.MISSING_ORG));
+    }
+
+    @Test
+    void verifyWithNullDigitalIdRecordsAuditEvent() {
+        int eventsBefore = auditLog.getEvents().size();
+
+        assertThrows(NullPointerException.class, () ->
+                verificationService.verify(new VerificationRequest(null, OrganisationType.EMPLOYER, null, null))
+        );
+
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
+        assertTrue(auditLog.getEvents().size() > eventsBefore);
+        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
+        assertTrue(event.details().contains("reason=" + AuditReasons.MISSING_ID));
+    }
+
+    @Test
+    void taxAuthorityWithInvalidPeriodRangeRecordsAuditEvent() {
+        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+        int eventsBefore = auditLog.getEvents().size();
+
+        assertThrows(IllegalArgumentException.class, () ->
+                verificationService.verify(new VerificationRequest(VALID_ID, OrganisationType.TAX_AUTHORITY,
+                        TODAY_UTC.plusDays(1), TODAY_UTC.minusDays(1)))
+        );
+
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
+        assertTrue(auditLog.getEvents().size() > eventsBefore);
+        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
+        assertTrue(event.details().contains("reason=" + AuditReasons.INVALID_PERIOD_RANGE));
+    }
+
+    @Test
+    void centralAuthorityWithNullIdStillThrowsSecurityException() {
+        assertThrows(SecurityException.class, () ->
+                verificationService.verify(
+                        new VerificationRequest(null, OrganisationType.CENTRAL_AUTHORITY, null, null)
+                )
+        );
+    }
+
+    @Test
+    void centralAuthorityWithNullIdRecordsUnauthorisedRejection() {
+        int eventsBefore = auditLog.getEvents().size();
+
+        assertThrows(SecurityException.class, () ->
+                verificationService.verify(
+                        new VerificationRequest(null, OrganisationType.CENTRAL_AUTHORITY, null, null)
+                )
+        );
+
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
+        assertTrue(auditLog.getEvents().size() > eventsBefore);
+        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
+        assertTrue(event.details().contains("org=" + OrganisationType.CENTRAL_AUTHORITY));
+        assertTrue(event.details().contains("reason=" + AuditReasons.UNAUTHORISED));
+    }
+
+    @Test
+    void centralAuthorityWithBlankIdStillThrowsSecurityException() {
+        assertThrows(SecurityException.class, () ->
+                verificationService.verify(
+                        new VerificationRequest("   ", OrganisationType.CENTRAL_AUTHORITY, null, null)
+                )
+        );
+    }
+
+    @Test
+    void centralAuthorityWithBlankIdRecordsUnauthorisedRejection() {
+        int eventsBefore = auditLog.getEvents().size();
+
+        assertThrows(SecurityException.class, () ->
+                verificationService.verify(
+                        new VerificationRequest("   ", OrganisationType.CENTRAL_AUTHORITY, null, null)
+                )
+        );
+
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
+        assertTrue(auditLog.getEvents().size() > eventsBefore);
+        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
+        assertTrue(event.details().contains("org=" + OrganisationType.CENTRAL_AUTHORITY));
+        assertTrue(event.details().contains("reason=" + AuditReasons.UNAUTHORISED));
     }
 }

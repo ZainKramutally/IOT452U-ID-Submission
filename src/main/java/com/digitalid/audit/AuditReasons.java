@@ -17,6 +17,8 @@ public final class AuditReasons {
     public static final String MISSING_PERIODS = "MISSING_PERIODS";
     public static final String MISSING_PERIOD_START = "MISSING_PERIOD_START";
     public static final String MISSING_PERIOD_END = "MISSING_PERIOD_END";
+    public static final String INVALID_STATUS_TRANSITION = "INVALID_STATUS_TRANSITION";
+    public static final String INVALID_PERIOD_RANGE = "INVALID_PERIOD_RANGE";
 
     private AuditReasons() {
     }

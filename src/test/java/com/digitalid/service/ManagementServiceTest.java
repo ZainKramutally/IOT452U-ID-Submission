@@ -628,25 +628,26 @@ class ManagementServiceTest {
     }
 
     @Test
-    void setRestrictedWithNullExpirySucceeds() {
+    void setRestrictedWithNullExpiryThrowsIllegalArgumentException() {
         service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
 
-        service.setRestricted(VALID_ID, true, RESTRICTION_REASON, null, OrganisationType.CENTRAL_AUTHORITY);
-
-        assertTrue(repository.findById(VALID_ID).orElseThrow().isRestricted());
+        assertThrows(IllegalArgumentException.class, () ->
+                service.setRestricted(VALID_ID, true, RESTRICTION_REASON, null, OrganisationType.CENTRAL_AUTHORITY)
+        );
     }
 
     @Test
-    void setRestrictedWithNullExpiryOmitsExpiryInAuditDetails() {
+    void setRestrictedWithNullExpiryRecordsAuditEvent() {
         service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
         int eventsBefore = auditLog.getEvents().size();
 
-        service.setRestricted(VALID_ID, true, RESTRICTION_REASON, null, OrganisationType.CENTRAL_AUTHORITY);
+        assertThrows(IllegalArgumentException.class, () ->
+                service.setRestricted(VALID_ID, true, RESTRICTION_REASON, null, OrganisationType.CENTRAL_AUTHORITY)
+        );
 
         AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
         assertTrue(auditLog.getEvents().size() > eventsBefore);
-        assertEquals("SET_RESTRICTED", event.action());
-        assertTrue(event.details().contains("reason=" + RESTRICTION_REASON));
-        assertFalse(event.details().contains("expiresOn="));
+        assertEquals("SET_RESTRICTED_REJECTED", event.action());
+        assertTrue(event.details().contains("reason=" + AuditReasons.MISSING_EXPIRES_ON));
     }
 }

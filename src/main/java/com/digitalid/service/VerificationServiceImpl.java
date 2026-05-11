@@ -35,12 +35,13 @@ public class VerificationServiceImpl implements VerificationService {
         }
 
         OrganisationType orgType = requireOrganisationType(request.organisationType());
-        String digitalId = requireText(request.digitalId(), "digitalId", orgType, AuditReasons.MISSING_ID);
 
         if (orgType == OrganisationType.CENTRAL_AUTHORITY) {
-            recordRejection(AuditActions.VERIFY, digitalId, orgType, AuditReasons.UNAUTHORISED);
+            recordRejection(AuditActions.VERIFY, request.digitalId(), orgType, AuditReasons.UNAUTHORISED);
             throw new SecurityException("Central authority is not permitted to perform verification requests");
         }
+
+        String digitalId = requireText(request.digitalId(), "digitalId", orgType, AuditReasons.MISSING_ID);
 
         return repository.findById(digitalId)
                 .map(identity -> evaluate(identity, request))
@@ -89,6 +90,12 @@ public class VerificationServiceImpl implements VerificationService {
             throw new IllegalArgumentException(
                     "Tax authority verification requires both periodStart and periodEnd"
             );
+        }
+
+        if (periodStart.isAfter(periodEnd)) {
+            recordRejection(AuditActions.VERIFY, identity.getId(), OrganisationType.TAX_AUTHORITY,
+                    AuditReasons.INVALID_PERIOD_RANGE);
+            throw new IllegalArgumentException("periodStart must be on or before periodEnd");
         }
 
         boolean suspendedDuringPeriod = wasSuspendedDuringPeriod(identity, periodStart, periodEnd);
@@ -154,7 +161,7 @@ public class VerificationServiceImpl implements VerificationService {
     // No reason detail is exposed to enforce limited disclosure in code
     private VerificationResult evaluateForEmployerOrBank(DigitalID identity) {
         boolean active = identity.getStatus() == DigitalIDStatus.ACTIVE;
-        return new VerificationResult(true, active, active ? ReasonCode.VALID : ReasonCode.INVALID, null);
+        return new VerificationResult(true, active, active ? ReasonCode.VALID : ReasonCode.INACTIVE, null);
     }
 
     private OrganisationType requireOrganisationType(OrganisationType orgType) {

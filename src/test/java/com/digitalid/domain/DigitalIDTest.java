@@ -117,6 +117,9 @@ class DigitalIDTest {
         assertTrue(DigitalIDStatus.ACTIVE.canTransitionTo(DigitalIDStatus.REVOKED));
         assertTrue(DigitalIDStatus.SUSPENDED.canTransitionTo(DigitalIDStatus.ACTIVE));
         assertTrue(DigitalIDStatus.SUSPENDED.canTransitionTo(DigitalIDStatus.REVOKED));
+        assertFalse(DigitalIDStatus.ACTIVE.canTransitionTo(DigitalIDStatus.ACTIVE));
+        assertFalse(DigitalIDStatus.SUSPENDED.canTransitionTo(DigitalIDStatus.SUSPENDED));
+        assertFalse(DigitalIDStatus.REVOKED.canTransitionTo(DigitalIDStatus.REVOKED));
         assertFalse(DigitalIDStatus.REVOKED.canTransitionTo(DigitalIDStatus.ACTIVE));
         assertFalse(DigitalIDStatus.REVOKED.canTransitionTo(DigitalIDStatus.SUSPENDED));
     }
