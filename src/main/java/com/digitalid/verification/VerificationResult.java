@@ -1,14 +1,18 @@
 package com.digitalid.verification;
 
+import com.digitalid.domain.ReasonCode;
+
 public class VerificationResult {
     private final boolean exists;
     private final boolean valid;
-    private final String reason;
+    private final ReasonCode reason;
+    private final String detail;
 
-    public VerificationResult(boolean exists, boolean valid, String reason) {
+    public VerificationResult(boolean exists, boolean valid, ReasonCode reason, String detail) {
         this.exists = exists;
         this.valid = valid;
         this.reason = reason;
+        this.detail = detail;
     }
 
     public boolean exists() {
@@ -19,8 +23,12 @@ public class VerificationResult {
         return valid;
     }
 
-    public String getReason() {
+    public ReasonCode getReason() {
         return reason;
+    }
+
+    public String getDetail() {
+        return detail;
     }
 
     @Override
@@ -28,8 +36,8 @@ public class VerificationResult {
         return "VerificationResult{" +
                 "exists=" + exists +
                 ", valid=" + valid +
-                ", reason='" + reason + '\'' +
+                ", reason=" + reason +
+                ", detail='" + detail + '\'' +
                 '}';
     }
 }
-
