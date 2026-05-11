@@ -3,6 +3,7 @@ package com.digitalid.service;
 import com.digitalid.audit.AuditActions;
 import com.digitalid.audit.AuditEvent;
 import com.digitalid.audit.AuditLog;
+import com.digitalid.audit.AuditReasons;
 import com.digitalid.domain.OrganisationType;
 import com.digitalid.domain.ReasonCode;
 import com.digitalid.domain.DigitalIDStatus;
@@ -99,7 +100,7 @@ class VerificationServiceTest {
     void verifyingNonExistentIdAsTaxAuthorityReturnsNotFound() {
         VerificationResult result = verificationService.verify(
                 new VerificationRequest("NONEXISTENT", OrganisationType.TAX_AUTHORITY,
-                        LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31))
+                        TODAY_UTC.minusDays(30), TODAY_UTC.plusDays(30))
         );
 
         assertFalse(result.exists());
@@ -569,5 +570,35 @@ class VerificationServiceTest {
         assertNotNull(driving.reason());
         assertNotNull(tax.reason());
         assertNotNull(notFound.reason());
+    }
+
+    @Test
+    void nullRequestRecordsRejectedAuditEvent() {
+        int eventsBefore = auditLog.getEvents().size();
+
+        assertThrows(NullPointerException.class, () ->
+                verificationService.verify(null)
+        );
+
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
+        assertTrue(auditLog.getEvents().size() > eventsBefore);
+        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
+        assertTrue(event.details().contains("reason=" + AuditReasons.MISSING_REQUEST));
+    }
+
+    @Test
+    void blankIdRequestRecordsRejectedAuditEvent() {
+        int eventsBefore = auditLog.getEvents().size();
+
+        assertThrows(IllegalArgumentException.class, () ->
+                verificationService.verify(
+                        new VerificationRequest("   ", OrganisationType.EMPLOYER, null, null)
+                )
+        );
+
+        AuditEvent event = auditLog.getEvents().get(auditLog.getEvents().size() - 1);
+        assertTrue(auditLog.getEvents().size() > eventsBefore);
+        assertEquals(AuditActions.rejected(AuditActions.VERIFY), event.action());
+        assertTrue(event.details().contains("reason=" + AuditReasons.MISSING_ID));
     }
 }

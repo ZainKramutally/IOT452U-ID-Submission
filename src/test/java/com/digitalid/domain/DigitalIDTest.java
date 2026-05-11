@@ -7,6 +7,7 @@ import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -118,5 +119,26 @@ class DigitalIDTest {
         assertTrue(DigitalIDStatus.SUSPENDED.canTransitionTo(DigitalIDStatus.REVOKED));
         assertFalse(DigitalIDStatus.REVOKED.canTransitionTo(DigitalIDStatus.ACTIVE));
         assertFalse(DigitalIDStatus.REVOKED.canTransitionTo(DigitalIDStatus.SUSPENDED));
+    }
+
+    @Test
+    void restrictionWithoutExpiryStaysRestricted() {
+        DigitalID digitalID = new DigitalID("ID-11", "Casey Lane", LocalDate.of(1993, 8, 2));
+
+        digitalID.setRestricted(true, "NO_EXPIRY", null);
+
+        assertTrue(digitalID.isRestricted());
+    }
+
+    @Test
+    void restrictionWithoutExpiryStoresNullExpiryInHistory() {
+        DigitalID digitalID = new DigitalID("ID-12", "Aria Moss", LocalDate.of(1991, 12, 12));
+
+        digitalID.setRestricted(true, "NO_EXPIRY", null);
+
+        RestrictionChange latest = digitalID.getRestrictionHistory().get(0);
+        assertTrue(latest.restricted());
+        assertEquals("NO_EXPIRY", latest.reason());
+        assertNull(latest.expiresOn());
     }
 }
