@@ -18,7 +18,7 @@ public class AuditLog {
 
     public void printAll() {
         events.forEach(e ->
-                System.out.println("[" + e.getTimestamp() + "] " + e.getAction() + " | " + e.getDetails())
+                System.out.println("[" + e.timestamp() + "] " + e.action() + " | " + e.details())
         );
     }
 }
