@@ -58,7 +58,7 @@ class ManagementServiceTest {
         service.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
 
         assertEquals(1, auditLog.getEvents().size());
-        assertEquals("CREATE_IDENTITY", auditLog.getEvents().get(0).getAction());
+        assertEquals("CREATE_IDENTITY", auditLog.getEvents().get(0).action());
     }
 
     @Test
@@ -184,7 +184,7 @@ class ManagementServiceTest {
         service.updateName(VALID_ID, "New Name", OrganisationType.CENTRAL_AUTHORITY);
 
         AuditEvent updateEvent = auditLog.getEvents().get(1);
-        assertEquals("UPDATE_NAME", updateEvent.getAction());
+        assertEquals("UPDATE_NAME", updateEvent.action());
     }
 
     @Test
@@ -302,7 +302,7 @@ class ManagementServiceTest {
         service.changeStatus(VALID_ID, DigitalIDStatus.SUSPENDED, OrganisationType.CENTRAL_AUTHORITY);
 
         AuditEvent statusEvent = auditLog.getEvents().get(1);
-        assertEquals("CHANGE_STATUS", statusEvent.getAction());
+        assertEquals("CHANGE_STATUS", statusEvent.action());
     }
 
     @Test
@@ -447,7 +447,7 @@ class ManagementServiceTest {
         service.setRestricted(VALID_ID, true, OrganisationType.CENTRAL_AUTHORITY);
 
         AuditEvent event = auditLog.getEvents().get(1);
-        assertEquals("SET_RESTRICTED", event.getAction());
+        assertEquals("SET_RESTRICTED", event.action());
     }
 
     @Test
@@ -456,8 +456,8 @@ class ManagementServiceTest {
         service.changeStatus(VALID_ID, DigitalIDStatus.SUSPENDED, OrganisationType.CENTRAL_AUTHORITY);
 
         AuditEvent statusEvent = auditLog.getEvents().get(1);
-        assertTrue(statusEvent.getDetails().contains("from=ACTIVE"));
-        assertTrue(statusEvent.getDetails().contains("to=SUSPENDED"));
+        assertTrue(statusEvent.details().contains("from=ACTIVE"));
+        assertTrue(statusEvent.details().contains("to=SUSPENDED"));
     }
 
     @Test
@@ -466,7 +466,7 @@ class ManagementServiceTest {
         service.updateName(VALID_ID, "New Name", OrganisationType.CENTRAL_AUTHORITY);
 
         AuditEvent updateEvent = auditLog.getEvents().get(1);
-        assertTrue(updateEvent.getDetails().contains("from=" + VALID_NAME));
-        assertTrue(updateEvent.getDetails().contains("to=New Name"));
+        assertTrue(updateEvent.details().contains("from=" + VALID_NAME));
+        assertTrue(updateEvent.details().contains("to=New Name"));
     }
 }
