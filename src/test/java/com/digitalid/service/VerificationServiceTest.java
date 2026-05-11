@@ -50,7 +50,7 @@ class VerificationServiceTest {
                 new VerificationRequest("NONEXISTENT", OrganisationType.EMPLOYER, null, null)
         );
 
-        assertFalse(result.isValid());
+        assertFalse(result.valid());
     }
 
     @Test
@@ -59,7 +59,7 @@ class VerificationServiceTest {
                 new VerificationRequest("NONEXISTENT", OrganisationType.EMPLOYER, null, null)
         );
 
-        assertEquals(ReasonCode.NOT_FOUND, result.getReason());
+        assertEquals(ReasonCode.NOT_FOUND, result.reason());
     }
 
     @Test
@@ -69,7 +69,7 @@ class VerificationServiceTest {
         );
 
         assertFalse(result.exists());
-        assertEquals(ReasonCode.NOT_FOUND, result.getReason());
+        assertEquals(ReasonCode.NOT_FOUND, result.reason());
     }
 
     @Test
@@ -79,7 +79,7 @@ class VerificationServiceTest {
         );
 
         assertFalse(result.exists());
-        assertEquals(ReasonCode.NOT_FOUND, result.getReason());
+        assertEquals(ReasonCode.NOT_FOUND, result.reason());
     }
 
     @Test
@@ -89,7 +89,7 @@ class VerificationServiceTest {
         );
 
         assertFalse(result.exists());
-        assertEquals(ReasonCode.NOT_FOUND, result.getReason());
+        assertEquals(ReasonCode.NOT_FOUND, result.reason());
     }
 
     @Test
@@ -100,7 +100,7 @@ class VerificationServiceTest {
         );
 
         assertFalse(result.exists());
-        assertEquals(ReasonCode.NOT_FOUND, result.getReason());
+        assertEquals(ReasonCode.NOT_FOUND, result.reason());
     }
 
     @Test
@@ -131,7 +131,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.EMPLOYER, null, null)
         );
 
-        assertTrue(result.isValid());
+        assertTrue(result.valid());
     }
 
     @Test
@@ -142,7 +142,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.EMPLOYER, null, null)
         );
 
-        assertNull(result.getDetail());
+        assertNull(result.detail());
     }
 
     @Test
@@ -154,7 +154,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.EMPLOYER, null, null)
         );
 
-        assertFalse(result.isValid());
+        assertFalse(result.valid());
     }
 
     @Test
@@ -166,7 +166,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.EMPLOYER, null, null)
         );
 
-        assertNull(result.getDetail());
+        assertNull(result.detail());
     }
 
     @Test
@@ -178,7 +178,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.EMPLOYER, null, null)
         );
 
-        assertFalse(result.isValid());
+        assertFalse(result.valid());
     }
 
     @Test
@@ -190,7 +190,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.EMPLOYER, null, null)
         );
 
-        assertTrue(result.isValid());
+        assertTrue(result.valid());
     }
 
     @Test
@@ -201,7 +201,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.BANK, null, null)
         );
 
-        assertTrue(result.isValid());
+        assertTrue(result.valid());
     }
 
     @Test
@@ -212,7 +212,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.BANK, null, null)
         );
 
-        assertNull(result.getDetail());
+        assertNull(result.detail());
     }
 
     @Test
@@ -224,7 +224,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.BANK, null, null)
         );
 
-        assertFalse(result.isValid());
+        assertFalse(result.valid());
     }
 
     @Test
@@ -236,7 +236,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.BANK, null, null)
         );
 
-        assertNull(result.getDetail());
+        assertNull(result.detail());
     }
 
     @Test
@@ -248,7 +248,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.BANK, null, null)
         );
 
-        assertTrue(result.isValid());
+        assertTrue(result.valid());
     }
 
     @Test
@@ -259,7 +259,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.DRIVING_LICENCE_AUTHORITY, null, null)
         );
 
-        assertTrue(result.isValid());
+        assertTrue(result.valid());
     }
 
     @Test
@@ -271,7 +271,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.DRIVING_LICENCE_AUTHORITY, null, null)
         );
 
-        assertFalse(result.isValid());
+        assertFalse(result.valid());
     }
 
     @Test
@@ -283,7 +283,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.DRIVING_LICENCE_AUTHORITY, null, null)
         );
 
-        assertEquals(ReasonCode.RESTRICTED, result.getReason());
+        assertEquals(ReasonCode.RESTRICTED, result.reason());
     }
 
     @Test
@@ -295,7 +295,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.DRIVING_LICENCE_AUTHORITY, null, null)
         );
 
-        assertFalse(result.isValid());
+        assertFalse(result.valid());
     }
 
     @Test
@@ -307,7 +307,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.DRIVING_LICENCE_AUTHORITY, null, null)
         );
 
-        assertEquals(ReasonCode.INACTIVE, result.getReason());
+        assertEquals(ReasonCode.INACTIVE, result.reason());
     }
 
     @Test
@@ -319,7 +319,7 @@ class VerificationServiceTest {
                 new VerificationRequest(VALID_ID, OrganisationType.DRIVING_LICENCE_AUTHORITY, null, null)
         );
 
-        assertFalse(result.isValid());
+        assertFalse(result.valid());
     }
 
     @Test
@@ -331,7 +331,7 @@ class VerificationServiceTest {
                         TODAY_UTC.minusDays(30), TODAY_UTC.plusDays(30))
         );
 
-        assertTrue(result.isValid());
+        assertTrue(result.valid());
     }
 
     @Test
@@ -343,7 +343,7 @@ class VerificationServiceTest {
                         TODAY_UTC.minusDays(30), TODAY_UTC.plusDays(30))
         );
 
-        assertEquals(ReasonCode.VALID, result.getReason());
+        assertEquals(ReasonCode.VALID, result.reason());
     }
 
     @Test
@@ -356,7 +356,7 @@ class VerificationServiceTest {
                         TODAY_UTC.minusDays(30), TODAY_UTC.plusDays(30))
         );
 
-        assertFalse(result.isValid());
+        assertFalse(result.valid());
     }
 
     @Test
@@ -369,7 +369,7 @@ class VerificationServiceTest {
                         TODAY_UTC.minusDays(30), TODAY_UTC.plusDays(30))
         );
 
-        assertEquals(ReasonCode.SUSPENDED_DURING_PERIOD, result.getReason());
+        assertEquals(ReasonCode.SUSPENDED_DURING_PERIOD, result.reason());
     }
 
     @Test
@@ -382,7 +382,7 @@ class VerificationServiceTest {
                         TODAY_UTC.minusDays(30), TODAY_UTC.plusDays(30))
         );
 
-        assertFalse(result.isValid());
+        assertFalse(result.valid());
     }
 
     @Test
@@ -471,11 +471,11 @@ class VerificationServiceTest {
                 new VerificationRequest("NONEXISTENT", OrganisationType.EMPLOYER, null, null)
         );
 
-        assertNotNull(employer.getReason());
-        assertNotNull(bank.getReason());
-        assertNotNull(driving.getReason());
-        assertNotNull(tax.getReason());
-        assertNotNull(notFound.getReason());
+        assertNotNull(employer.reason());
+        assertNotNull(bank.reason());
+        assertNotNull(driving.reason());
+        assertNotNull(tax.reason());
+        assertNotNull(notFound.reason());
     }
 }
 
