@@ -14,7 +14,8 @@ public interface VerificationService {
      * The response differs by organisation type as follows:
      * TAX_AUTHORITY receives exists, valid, and a reason including suspension period checks
      * DRIVING_LICENCE_AUTHORITY receives exists, valid, and a reason including restriction checks
-     * EMPLOYER and BANK receive only exists and valid with no reason detail exposed
+     * EMPLOYER and BANK receive exists, valid, and a non-null reason code, but no additional
+     * detailed reason information is disclosed beyond that coarse result
      * Throws SecurityException if the organisation type is CENTRAL_AUTHORITY
      * Throws IllegalArgumentException if TAX_AUTHORITY request is missing period dates
      */
