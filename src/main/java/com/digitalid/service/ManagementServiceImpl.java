@@ -2,7 +2,8 @@ package com.digitalid.service;
 
 import com.digitalid.audit.AuditActions;
 import com.digitalid.audit.AuditDetailKeys;
-import com.digitalid.audit.AuditLog;
+import com.digitalid.audit.AuditDetails;
+import com.digitalid.audit.AuditRecorder;
 import com.digitalid.audit.AuditReasons;
 import com.digitalid.domain.DigitalID;
 import com.digitalid.domain.DigitalIDStatus;
@@ -15,9 +16,9 @@ import java.util.Objects;
 @SuppressWarnings("ClassCanBeRecord")
 public class ManagementServiceImpl implements ManagementService {
     private final IdentityRepository repository;
-    private final AuditLog auditLog;
+    private final AuditRecorder auditLog;
 
-    public ManagementServiceImpl(IdentityRepository repository, AuditLog auditLog) {
+    public ManagementServiceImpl(IdentityRepository repository, AuditRecorder auditLog) {
         this.repository = Objects.requireNonNull(repository, "repository");
         this.auditLog = Objects.requireNonNull(auditLog, "auditLog");
     }
@@ -38,7 +39,7 @@ public class ManagementServiceImpl implements ManagementService {
 
         DigitalID digitalID = new DigitalID(checkedId, checkedFullName, checkedDob);
         repository.save(digitalID);
-        auditLog.record(AuditActions.CREATE_IDENTITY, details(detail(AuditDetailKeys.ID, checkedId)));
+        auditLog.record(AuditActions.CREATE_IDENTITY, AuditDetails.details(AuditDetails.detail(AuditDetailKeys.ID, checkedId)));
         return digitalID;
     }
 
@@ -58,10 +59,10 @@ public class ManagementServiceImpl implements ManagementService {
 
         digitalID.updateFullName(checkedFullName);
         repository.save(digitalID);
-        auditLog.record(AuditActions.UPDATE_NAME, details(
-                detail(AuditDetailKeys.ID, checkedId),
-                detail(AuditDetailKeys.FROM, previousName),
-                detail(AuditDetailKeys.TO, checkedFullName)
+        auditLog.record(AuditActions.UPDATE_NAME, AuditDetails.details(
+                AuditDetails.detail(AuditDetailKeys.ID, checkedId),
+                AuditDetails.detail(AuditDetailKeys.FROM, previousName),
+                AuditDetails.detail(AuditDetailKeys.TO, checkedFullName)
         ));
     }
 
@@ -74,19 +75,19 @@ public class ManagementServiceImpl implements ManagementService {
         DigitalIDStatus previousStatus = digitalID.getStatus();
 
         if (previousStatus == checkedStatus) {
-            auditLog.record(AuditActions.CHANGE_STATUS_NO_OP, details(
-                    detail(AuditDetailKeys.ID, checkedId),
-                    detail(AuditDetailKeys.STATUS, checkedStatus)
+            auditLog.record(AuditActions.CHANGE_STATUS_NO_OP, AuditDetails.details(
+                    AuditDetails.detail(AuditDetailKeys.ID, checkedId),
+                    AuditDetails.detail(AuditDetailKeys.STATUS, checkedStatus)
             ));
             return;
         }
 
         if (!previousStatus.canTransitionTo(checkedStatus)) {
-            auditLog.record(AuditActions.rejected(AuditActions.CHANGE_STATUS), details(
-                    detail(AuditDetailKeys.ID, checkedId),
-                    detail(AuditDetailKeys.REASON, AuditReasons.INVALID_STATUS_TRANSITION),
-                    detail(AuditDetailKeys.FROM, previousStatus),
-                    detail(AuditDetailKeys.TO, checkedStatus)
+            auditLog.record(AuditActions.rejected(AuditActions.CHANGE_STATUS), AuditDetails.details(
+                    AuditDetails.detail(AuditDetailKeys.ID, checkedId),
+                    AuditDetails.detail(AuditDetailKeys.REASON, AuditReasons.INVALID_STATUS_TRANSITION),
+                    AuditDetails.detail(AuditDetailKeys.FROM, previousStatus),
+                    AuditDetails.detail(AuditDetailKeys.TO, checkedStatus)
             ));
             throw new IllegalStateException(
                     "Invalid status transition from " + previousStatus + " to " + checkedStatus + " for id: " + checkedId
@@ -95,10 +96,10 @@ public class ManagementServiceImpl implements ManagementService {
 
         digitalID.recordStatusChange(checkedStatus);
         repository.save(digitalID);
-        auditLog.record(AuditActions.CHANGE_STATUS, details(
-                detail(AuditDetailKeys.ID, checkedId),
-                detail(AuditDetailKeys.FROM, previousStatus),
-                detail(AuditDetailKeys.TO, checkedStatus)
+        auditLog.record(AuditActions.CHANGE_STATUS, AuditDetails.details(
+                AuditDetails.detail(AuditDetailKeys.ID, checkedId),
+                AuditDetails.detail(AuditDetailKeys.FROM, previousStatus),
+                AuditDetails.detail(AuditDetailKeys.TO, checkedStatus)
         ));
     }
 
@@ -123,13 +124,13 @@ public class ManagementServiceImpl implements ManagementService {
 
         digitalID.setRestricted(restricted, normalizedReason, normalizedExpiry);
         repository.save(digitalID);
-        String details = details(
-                detail(AuditDetailKeys.ID, checkedId),
-                detail(AuditDetailKeys.RESTRICTED, restricted),
-                detail(AuditDetailKeys.REASON, normalizedReason)
+        String details = AuditDetails.details(
+                AuditDetails.detail(AuditDetailKeys.ID, checkedId),
+                AuditDetails.detail(AuditDetailKeys.RESTRICTED, restricted),
+                AuditDetails.detail(AuditDetailKeys.REASON, normalizedReason)
         );
         if (normalizedExpiry != null) {
-            details = details(details, detail(AuditDetailKeys.EXPIRES_ON, normalizedExpiry));
+            details = AuditDetails.details(details, AuditDetails.detail(AuditDetailKeys.EXPIRES_ON, normalizedExpiry));
         }
         auditLog.record(AuditActions.SET_RESTRICTED, details);
     }
@@ -183,17 +184,9 @@ public class ManagementServiceImpl implements ManagementService {
     }
 
     private void recordRejection(String action, String id, String reason) {
-        auditLog.record(AuditActions.rejected(action), details(
-                detail(AuditDetailKeys.ID, id),
-                detail(AuditDetailKeys.REASON, reason)
+        auditLog.record(AuditActions.rejected(action), AuditDetails.details(
+                AuditDetails.detail(AuditDetailKeys.ID, id),
+                AuditDetails.detail(AuditDetailKeys.REASON, reason)
         ));
-    }
-
-    private static String detail(String key, Object value) {
-        return key + "=" + value;
-    }
-
-    private static String details(String... parts) {
-        return String.join(",", parts);
     }
 }

@@ -40,40 +40,43 @@ class VerificationServiceTest {
     }
 
     @Test
-    void verifyingNonExistentIdReturnsExistsFalse() {
+    void verifyingNonExistentIdReturnsNotFoundSummary() {
         VerificationResult result = verificationService.verify(
                 new VerificationRequest("NONEXISTENT", OrganisationType.EMPLOYER, null, null)
         );
 
         assertFalse(result.exists());
-    }
-
-    @Test
-    void verifyingNonExistentIdReturnsValidFalse() {
-        VerificationResult result = verificationService.verify(
-                new VerificationRequest("NONEXISTENT", OrganisationType.EMPLOYER, null, null)
-        );
-
         assertFalse(result.valid());
+        assertEquals(ReasonCode.NOT_FOUND, result.reason());
+        assertNull(result.detail());
     }
 
     @Test
-    void verifyingNonExistentIdReturnsNotFoundReasonCode() {
+    void activeIdentityVerifiedByEmployerReturnsExpectedFields() {
+        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+
         VerificationResult result = verificationService.verify(
-                new VerificationRequest("NONEXISTENT", OrganisationType.EMPLOYER, null, null)
+                new VerificationRequest(VALID_ID, OrganisationType.EMPLOYER, null, null)
         );
 
-        assertEquals(ReasonCode.NOT_FOUND, result.reason());
+        assertTrue(result.exists());
+        assertTrue(result.valid());
+        assertEquals(ReasonCode.VALID, result.reason());
+        assertNull(result.detail());
     }
 
     @Test
-    void verifyingNonExistentIdAsEmployerReturnsNotFound() {
+    void activeIdentityVerifiedByBankReturnsExpectedFields() {
+        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
+
         VerificationResult result = verificationService.verify(
-                new VerificationRequest("NONEXISTENT", OrganisationType.EMPLOYER, null, null)
+                new VerificationRequest(VALID_ID, OrganisationType.BANK, null, null)
         );
 
-        assertFalse(result.exists());
-        assertEquals(ReasonCode.NOT_FOUND, result.reason());
+        assertTrue(result.exists());
+        assertTrue(result.valid());
+        assertEquals(ReasonCode.VALID, result.reason());
+        assertNull(result.detail());
     }
 
     @Test
@@ -116,38 +119,6 @@ class VerificationServiceTest {
         assertFalse(auditLog.getEvents().isEmpty());
     }
 
-    @Test
-    void activeIdentityVerifiedByEmployerReturnsExistsTrue() {
-        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-
-        VerificationResult result = verificationService.verify(
-                new VerificationRequest(VALID_ID, OrganisationType.EMPLOYER, null, null)
-        );
-
-        assertTrue(result.exists());
-    }
-
-    @Test
-    void activeIdentityVerifiedByEmployerReturnsValidTrue() {
-        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-
-        VerificationResult result = verificationService.verify(
-                new VerificationRequest(VALID_ID, OrganisationType.EMPLOYER, null, null)
-        );
-
-        assertTrue(result.valid());
-    }
-
-    @Test
-    void activeIdentityVerifiedByEmployerReturnsNoDetail() {
-        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-
-        VerificationResult result = verificationService.verify(
-                new VerificationRequest(VALID_ID, OrganisationType.EMPLOYER, null, null)
-        );
-
-        assertNull(result.detail());
-    }
 
     @Test
     void suspendedIdentityVerifiedByEmployerReturnsValidFalse() {
@@ -209,16 +180,6 @@ class VerificationServiceTest {
         assertTrue(result.valid());
     }
 
-    @Test
-    void activeIdentityVerifiedByBankReturnsNoDetail() {
-        managementService.createIdentity(VALID_ID, VALID_NAME, VALID_DOB, OrganisationType.CENTRAL_AUTHORITY);
-
-        VerificationResult result = verificationService.verify(
-                new VerificationRequest(VALID_ID, OrganisationType.BANK, null, null)
-        );
-
-        assertNull(result.detail());
-    }
 
     @Test
     void suspendedIdentityVerifiedByBankReturnsValidFalse() {
