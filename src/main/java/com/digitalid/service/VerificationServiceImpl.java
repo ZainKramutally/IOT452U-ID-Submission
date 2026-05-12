@@ -2,7 +2,8 @@ package com.digitalid.service;
 
 import com.digitalid.audit.AuditActions;
 import com.digitalid.audit.AuditDetailKeys;
-import com.digitalid.audit.AuditLog;
+import com.digitalid.audit.AuditDetails;
+import com.digitalid.audit.AuditRecorder;
 import com.digitalid.audit.AuditReasons;
 import com.digitalid.domain.DigitalID;
 import com.digitalid.domain.DigitalIDStatus;
@@ -20,9 +21,9 @@ import java.util.Objects;
 @SuppressWarnings("ClassCanBeRecord")
 public class VerificationServiceImpl implements VerificationService {
     private final IdentityRepository repository;
-    private final AuditLog auditLog;
+    private final AuditRecorder auditLog;
 
-    public VerificationServiceImpl(IdentityRepository repository, AuditLog auditLog) {
+    public VerificationServiceImpl(IdentityRepository repository, AuditRecorder auditLog) {
         this.repository = Objects.requireNonNull(repository, "repository");
         this.auditLog = Objects.requireNonNull(auditLog, "auditLog");
     }
@@ -46,9 +47,9 @@ public class VerificationServiceImpl implements VerificationService {
         return repository.findById(digitalId)
                 .map(identity -> evaluate(identity, request))
                 .orElseGet(() -> {
-                    auditLog.record(AuditActions.VERIFY_NOT_FOUND, details(
-                            detail(AuditDetailKeys.ID, digitalId),
-                            detail(AuditDetailKeys.ORG, orgType)
+                    auditLog.record(AuditActions.VERIFY_NOT_FOUND, AuditDetails.details(
+                            AuditDetails.detail(AuditDetailKeys.ID, digitalId),
+                            AuditDetails.detail(AuditDetailKeys.ORG, orgType)
                     ));
                     return new VerificationResult(false, false, ReasonCode.NOT_FOUND, null);
                 });
@@ -70,10 +71,10 @@ public class VerificationServiceImpl implements VerificationService {
             }
         };
 
-        auditLog.record(AuditActions.VERIFY, details(
-                detail(AuditDetailKeys.ID, identity.getId()),
-                detail(AuditDetailKeys.ORG, orgType),
-                detail(AuditDetailKeys.RESULT, result.reason())
+        auditLog.record(AuditActions.VERIFY, AuditDetails.details(
+                AuditDetails.detail(AuditDetailKeys.ID, identity.getId()),
+                AuditDetails.detail(AuditDetailKeys.ORG, orgType),
+                AuditDetails.detail(AuditDetailKeys.RESULT, result.reason())
         ));
 
         return result;
@@ -186,18 +187,11 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     private void recordRejection(String action, String id, OrganisationType orgType, String reason) {
-        auditLog.record(AuditActions.rejected(action), details(
-                detail(AuditDetailKeys.ID, id),
-                detail(AuditDetailKeys.ORG, orgType),
-                detail(AuditDetailKeys.REASON, reason)
+        auditLog.record(AuditActions.rejected(action), AuditDetails.details(
+                AuditDetails.detail(AuditDetailKeys.ID, id),
+                AuditDetails.detail(AuditDetailKeys.ORG, orgType),
+                AuditDetails.detail(AuditDetailKeys.REASON, reason)
         ));
     }
-
-    private static String detail(String key, Object value) {
-        return key + "=" + value;
-    }
-
-    private static String details(String... parts) {
-        return String.join(",", parts);
-    }
 }
+

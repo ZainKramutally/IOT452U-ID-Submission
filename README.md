@@ -2,28 +2,26 @@
 
 [![CI](https://github.com/ZainKramutally/IOT452U-ID-Submission/actions/workflows/main.yml/badge.svg)](https://github.com/ZainKramutally/IOT452U-ID-Submission/actions/workflows/main.yml)
 
-**GitHub Repository:** [https://github.com/ZainKramutally/IOT452U-ID-Submission](https://github.com/ZainKramutally/IOT452U-ID-Submission)
+**GitHub Repository:** https://github.com/ZainKramutally/IOT452U-ID-Submission
 
 ---
 
 ## Overview
 
-This is a console-based backend system implementing a Digital ID platform for a federated ecosystem of organisations. The system supports two distinct capabilities: identity lifecycle management, restricted to a central authority, and identity verification, available to consuming organisations. These two capabilities are intentionally separated into independent services, reflecting the core architectural decision of the system.
+This project is a console-based backend system implementing a Digital ID platform for a federated ecosystem of organisations for IOT453U QMUL Assignment. The implementation is in Java 17 and focuses on system behaviour, clean structure, and sound engineering practice rather than a user interface.
 
-The central authority is the only actor permitted to create, update, and manage the status of Digital IDs. Consuming organisations, including tax authorities, driving licence authorities, employers, and banks, interact with the system solely through verification requests. Each organisation type receives a response shaped to its permitted level of disclosure. Organisations do not communicate with one another and all requests flow through the shared platform.
+The system is organised around distinct capabilities. Identity lifecycle management, creating identities, updating names, managing status, and applying restrictions, is handled exclusively by a central authority. Identity verification is handled separately and made available to consuming organisations including tax authorities, driving licence authorities, employers, and banks. Each organisation type receives a response appropriate to its permitted level of disclosure. These two capabilities are intentionally separated at the architectural level and neither is accessible through the other.
 
-Every key action in the system, including rejected operations, is recorded to an audit log so that system behaviour can be examined at any point.
+All significant system actions, including rejected operations, are recorded to an audit log so that system behaviour can be examined at any point.
 
 ---
 
 ## Requirements
 
-| Technology | Version |
-|---|---|
-| Java | 17+ |
-| Maven | 3.8+ |
+- Java 17+
+- Maven 3.8+
 
-Verify your installation:
+Verify your setup before running:
 
 ```sh
 java -version
@@ -32,7 +30,7 @@ mvn -version
 
 ---
 
-## Quick Start
+## Running the System
 
 Clone the repository:
 
@@ -47,7 +45,7 @@ Run all tests:
 mvn test
 ```
 
-Run the full build including coverage report:
+Run the full build including the JaCoCo coverage report:
 
 ```sh
 mvn verify
@@ -60,89 +58,85 @@ mvn compile
 java -cp target/classes com.digitalid.Main
 ```
 
-View the JaCoCo coverage report by opening `target/site/jacoco/index.html` in a browser after running `mvn verify`.
+The coverage report is generated at `target/site/jacoco/index.html` after running `mvn verify` and shows the coverage for each branch and etc.
 
 ---
 
-## Example Demonstration Output
-
-```text
-============================================================
-  SECTION 1 : IDENTITY CREATION
-============================================================
-
-Creating three Digital IDs as the central authority...
-
-Created: ID-1001 | Alice Johnson | DOB: 1990-03-15
-Created: ID-1002 | Bob Patel    | DOB: 1985-07-22
-Created: ID-1003 | Carol Smith  | DOB: 1978-11-08
-
-Attempting to create a duplicate ID (ID-1001)...
-Rejected as expected: Digital ID already exists: ID-1001
-
-Attempting to create an identity as an EMPLOYER (unauthorised)...
-Rejected as expected: Only the central authority may perform this action
-```
-
----
-
-## System Structure
+## Project Structure
 
 ```text
 src/
 ├── main/java/com/digitalid/
 │   ├── audit/
-│   │   ├── AuditActions.java
-│   │   ├── AuditDetailKeys.java
-│   │   ├── AuditEvent.java
-│   │   ├── AuditLog.java
-│   │   └── AuditReasons.java
+│   │   ├── AuditActions.java         ← action label constants
+│   │   ├── AuditDetailKeys.java      ← detail field key constants
+│   │   ├── AuditEvent.java           ← immutable record: timestamp, action, details
+│   │   ├── AuditLog.java             ← ordered event list with printAll()
+│   │   └── AuditReasons.java         ← rejection reason string constants
 │   ├── domain/
-│   │   ├── DigitalID.java
-│   │   ├── DigitalIDStatus.java
-│   │   ├── OrganisationType.java
-│   │   ├── ReasonCode.java
-│   │   ├── RestrictionChange.java
-│   │   └── StatusChange.java
+│   │   ├── DigitalID.java            ← core model with status and restriction history
+│   │   ├── DigitalIDStatus.java      ← enum with canTransitionTo() per constant
+│   │   ├── OrganisationType.java     ← all participating organisation types
+│   │   ├── ReasonCode.java           ← all verification outcome codes
+│   │   ├── RestrictionChange.java    ← record: restricted, reason, expiresOn, timestamp
+│   │   └── StatusChange.java         ← record: status, timestamp
 │   ├── repository/
-│   │   ├── IdentityRepository.java
-│   │   └── InMemoryIdentityRepository.java
+│   │   ├── IdentityRepository.java         ← storage interface
+│   │   └── InMemoryIdentityRepository.java ← ConcurrentHashMap implementation
 │   ├── service/
-│   │   ├── ManagementService.java
-│   │   ├── ManagementServiceImpl.java
-│   │   ├── VerificationService.java
-│   │   └── VerificationServiceImpl.java
+│   │   ├── ManagementService.java          ← management capability interface
+│   │   ├── ManagementServiceImpl.java      ← lifecycle rules and business logic
+│   │   ├── VerificationService.java        ← verification capability interface
+│   │   └── VerificationServiceImpl.java    ← organisation-differentiated verification
 │   ├── verification/
-│   │   ├── VerificationRequest.java
-│   │   └── VerificationResult.java
-│   └── Main.java
+│   │   ├── VerificationRequest.java  ← record: digitalId, orgType, periodStart, periodEnd
+│   │   └── VerificationResult.java   ← record: exists, valid, reason, detail
+│   └── Main.java                     ← scripted console demonstration
 └── test/java/com/digitalid/
-    ├── domain/
-    │   └── DigitalIDTest.java
-    ├── repository/
-    │   └── IdentityRepositoryTest.java
+    ├── domain/DigitalIDTest.java
+    ├── repository/IdentityRepositoryTest.java
     └── service/
         ├── ManagementServiceTest.java
         └── VerificationServiceTest.java
 ```
 
-### Package Responsibilities
+---
 
-**`audit`** records all key system actions. `AuditEvent` is an immutable record storing a timestamp, action label, and detail string. `AuditLog` holds an ordered list of events and exposes a `printAll` method for demonstration. `AuditActions` defines all action label constants. `AuditDetailKeys` defines all audit detail field name constants such as id, from, to, reason, and org. `AuditReasons` defines all rejection reason constants such as UNAUTHORISED, REVOKED, DUPLICATE, and MISSING_ID. Together these three classes mean the entire audit system is free of magic strings.
+## Architecture
 
-**`domain`** is the core model with no dependencies on any other package. `DigitalID` holds both immutable fields (`id`, `dateOfBirth`) and mutable fields (`fullName`, `status`). It maintains a full `statusHistory` as a list of `StatusChange` records and a `restrictionHistory` as a list of `RestrictionChange` records. `DigitalIDStatus` is an enum that encodes valid state transitions directly on each constant via `canTransitionTo`. `OrganisationType` and `ReasonCode` are enums that eliminate magic strings from the service and verification layers.
+Both services share a single `IdentityRepository` and a single `AuditLog`. There is one in-memory store and one audit trail for the whole system.
 
-**`repository`** defines the `IdentityRepository` interface and provides an `InMemoryIdentityRepository` implementation backed by a `ConcurrentHashMap`. The service layer depends only on the interface, meaning the storage mechanism can be replaced without touching any business logic.
-
-**`service`** contains the two distinct system capabilities. `ManagementService` and its implementation handle all identity lifecycle operations and are restricted to the central authority. `VerificationService` and its implementation handle all verification requests from consuming organisations and shape the response according to organisation type.
-
-**`verification`** defines `VerificationRequest` and `VerificationResult` as records. `VerificationRequest` carries the digital ID, organisation type, and optional period dates for tax authority requests. `VerificationResult` carries an exists flag, a valid flag, a `ReasonCode`, and a nullable detail field that is intentionally withheld for employer and bank responses to enforce limited disclosure in code.
+```text
+  +---------------------+              +-------------------------+
+  |  Central Authority  |              |  Consuming Organisation |
+  |                     |              |  Employer / Bank /      |
+  |                     |              |  Driving Licence /      |
+  |                     |              |  Tax Authority          |
+  +----------+----------+              +------------+------------+
+             |                                      |
+             v                                      v
+  +----------+----------+              +------------+------------+
+  |  ManagementService  |              |  VerificationService    |
+  +----------+----------+              +------------+------------+
+             |                                      |
+             +------------------+-------------------+
+                                |
+               +----------------+----------------+
+               |                                 |
+               v                                 v
+    +----------+----------+           +----------+----------+
+    | IdentityRepository  |           |      AuditLog       |
+    +----------+----------+           +---------------------+
+               |
+               v
+    +----------+----------+
+    |      DigitalID      |
+    +---------------------+
+```
 
 ---
 
-## Identity Status Lifecycle
-
-The system supports three identity states with the following permitted transitions:
+## Status Transitions
 
 | From | To | Permitted |
 |---|---|---|
@@ -150,131 +144,78 @@ The system supports three identity states with the following permitted transitio
 | ACTIVE | REVOKED | Yes |
 | SUSPENDED | ACTIVE | Yes |
 | SUSPENDED | REVOKED | Yes |
-| REVOKED | Any | No |
+| REVOKED | Anything | No |
 
-REVOKED is a terminal state. Invalid transitions are rejected with an `IllegalStateException` and recorded in the audit log. Repeated operations with the same status are handled as a no-op without adding a history entry.
+REVOKED is a terminal state. Requesting the same status that is already set is handled gracefully as a no-op, logged as `CHANGE_STATUS_NO_OP`, and does not add an entry to the status history. All invalid transitions throw an `IllegalStateException` and are recorded in the audit log.
 
 ---
 
-## Verification by Organisation Type
+## Verification Behaviour by Organisation Type
 
-| Organisation | Checks | Detail Exposed |
+| Organisation | Checks Performed | Response |
 |---|---|---|
-| EMPLOYER | Exists, ACTIVE | None |
-| BANK | Exists, ACTIVE | None |
-| DRIVING_LICENCE_AUTHORITY | Exists, ACTIVE, not restricted | ReasonCode |
-| TAX_AUTHORITY | Exists, ACTIVE, not suspended during period | ReasonCode |
+| EMPLOYER | Exists, ACTIVE | valid true/false, no detail |
+| BANK | Exists, ACTIVE | valid true/false, no detail |
+| DRIVING_LICENCE_AUTHORITY | Exists, ACTIVE, not restricted | valid + ReasonCode |
+| TAX_AUTHORITY | Exists, ACTIVE, not suspended during period | valid + ReasonCode |
 | CENTRAL_AUTHORITY | Not permitted | SecurityException |
 
 ---
 
 ## Key Design Decisions
 
-### Management and Verification as Separate Capabilities
+### Separation of Management and Verification
 
-The brief explicitly states that identity management and identity consumption must be treated as distinct system capabilities. This is reflected in two separate service interfaces with no shared state or inheritance. `ManagementService` is the only entry point for write operations. `VerificationService` is the only entry point for read operations. A consuming organisation calling `ManagementService` receives a `SecurityException`. The central authority calling `VerificationService` also receives a `SecurityException`. Neither capability is accessible through the other.
+The project brief requires these to be treated as distinct capabilities, and this is reflected directly in the structure. `ManagementService` is the sole entry point for all write operations. `VerificationService` is the sole entry point for all read operations. A consuming organisation attempting to call `ManagementService` receives a `SecurityException`. The central authority attempting to call `VerificationService` receives the same. The separation is enforced at runtime, not by convention.
 
-### Status Transitions on the Enum
+### Transition Logic on the Enum
 
-Valid status transitions are defined directly on `DigitalIDStatus` via an abstract `canTransitionTo` method implemented by each constant. This means the transition rules live in exactly one place and the service layer does not need to know what transitions are valid, it simply asks the current status. If a new status value is added in future, the compiler enforces that its transitions are explicitly defined. The no-op case where the same status is requested again is handled separately in the service as a deliberate design decision: `canTransitionTo` models genuine state changes only, keeping its meaning precise.
+Each `DigitalIDStatus` constant implements its own `canTransitionTo` method. This keeps all transition rules in one place. The service layer does not need to know what is or is not a valid transition,  it simply asks the current status. A practical benefit of this approach is that if a new status value is introduced in future, the compiler requires its transition rules to be explicitly defined before the code will build.
+
+The no-op case, where the same status is requested again, is handled separately in the service rather than in `canTransitionTo`. This keeps the method's meaning precise: it only describes genuine state changes.
 
 ### Status History for Period-Based Verification
 
-`DigitalID` records every status change as a timestamped `StatusChange` entry rather than storing only the current status. This is required for the tax authority period check, which must determine whether an identity was suspended at any point during a reporting period, not just whether it is currently suspended. The verification service converts the history into intervals and checks for overlap with the requested period, correctly handling cases where a suspension started before the period began, ended after it started, or was reinstated before the period but still overlapped it.
+Storing only the current status would make the tax authority period check impossible to implement correctly. Instead, every status change is recorded as a `StatusChange` entry with a UTC timestamp. The verification service reconstructs each status interval from the history and tests it for overlap against the requested reporting period. This approach correctly handles cases where a suspension started before the period began, ended during it, or spans the entire period, none of which a point-in-time status check could detect, which is what I had initially and produced bugs.
 
-### Restriction History with Expiry
+### Restriction History with Automatic Expiry
 
-Restrictions are stored as a `RestrictionChange` history rather than a single boolean flag. Each restriction entry carries a reason and a timestamp; the management service requires an expiry date whenever a restriction is applied. The domain model allows a null expiry for low-level usage (for example, in tests or direct domain manipulation), but the service layer enforces the expiry rule for all managed operations. `isRestricted()` on `DigitalID` evaluates the most recent restriction entry and returns false once that expiry date has passed. This allows time-limited restrictions to expire automatically without requiring a manual update from the central authority. The history is preserved in full so past restrictions remain auditable even after they have expired.
+Restrictions are stored as a `RestrictionChange` history rather than a single boolean flag. Each entry carries a reason, an optional expiry date, and a timestamp. `isRestricted()` on `DigitalID` evaluates the most recent entry and returns false once its expiry date has passed. This allows time-limited restrictions to expire without requiring a manual update from the central authority. The full history is preserved so that past restrictions remain auditable after they have expired.
 
 ### Audit Logging of Rejections
 
-Every operation that is rejected, whether due to an unauthorised actor, an invalid status transition, a revoked identity, or a missing required field, produces an audit record before the exception is thrown. This means the audit log represents a complete history of all attempted actions, not just successful ones. The `AuditActions` constants class ensures all action labels are consistent and defined in a single place.
+Writing an audit record only on success would produce an incomplete log. Every rejected operation, unauthorised actor, invalid status transition, revoked identity, missing field, produces an audit record before the exception is thrown. The log therefore reflects everything the system received and attempted, not just what succeeded.
 
 ### No Magic Strings
 
-All reason codes are defined in the `ReasonCode` enum. All audit action labels are defined as constants in `AuditActions`. All audit detail field name keys such as id, from, to, org, and reason are defined in `AuditDetailKeys`. All rejection reason strings such as UNAUTHORISED, REVOKED, DUPLICATE, and MISSING_ID are defined in `AuditReasons`. The codebase contains no inline string literals used as identifiers anywhere in the service or verification layers. Every string that carries meaning is defined once and referenced everywhere.
+`AuditActions` defines all action label constants. `AuditDetailKeys` defines all audit detail field key names. `AuditReasons` defines all rejection reason strings. `ReasonCode` is an enum for all verification outcomes. No meaningful string literal appears inline anywhere in the service or verification layers,  every identifier is defined once and referenced wherever it is needed.
 
 ### Java Records for Value Objects
 
-Immutable value objects throughout the system — `AuditEvent`, `StatusChange`, `RestrictionChange`, `VerificationRequest`, and `VerificationResult` — are implemented as Java records. Records eliminate constructor, getter, equals, hashCode, and toString boilerplate whilst making immutability explicit by design. This is idiomatic Java 17 and keeps value-carrying classes concise and readable.
+`AuditEvent`, `StatusChange`, `RestrictionChange`, `VerificationRequest`, and `VerificationResult` are implemented as Java records. Records enforce immutability by design and eliminate the need for manually written constructors, getters, `equals`, `hashCode`, and `toString`. This is the idiomatic Java 17 approach for objects whose sole purpose is to carry data.
 
 ### Programming to Interfaces
 
-Both service classes are defined as interfaces with separate implementation classes. The service layer accepts `IdentityRepository` by interface rather than the concrete `InMemoryIdentityRepository`. This means any component can be substituted, for example replacing the in-memory store with a database-backed implementation, without changing any business logic. It also makes each component independently testable.
+Both service implementations and the repository accept dependencies through interfaces rather than concrete types. The service layer references `IdentityRepository`, not `InMemoryIdentityRepository`. This means the storage layer could be replaced with a database-backed implementation without modifying any business logic. It also allows each component to be tested in isolation.
 
 ---
 
 ## Continuous Integration
 
-The project uses GitHub Actions. The pipeline triggers on every push to every branch and on every pull request, ensuring CI activity is visible throughout the full development history.
+The project uses GitHub Actions. The pipeline is configured to trigger on every push and pull request across all branches, so CI activity is visible throughout the development history rather than appearing only at the end.
 
-The pipeline performs the following steps on each run:
-
-- Checks out the code
-- Sets up JDK 17 using the Temurin distribution
-- Runs `mvn verify` which compiles, executes all tests, and generates the JaCoCo coverage report
-- Uploads Surefire test reports as a build artefact
-- Uploads the JaCoCo coverage report as a build artefact
-
-The pipeline fails if any test fails, ensuring no broken code can be merged without the failure being visible in the Actions tab.
+Each run sets up JDK 17 using the Temurin distribution, executes `mvn verify` to compile, test, and generate the coverage report, and uploads both the Surefire test reports and JaCoCo coverage report as build artefacts. A failing test fails the pipeline.
 
 ---
 
 ## Test Coverage
 
-The test suite covers the following areas across four test classes:
+The test suite spans four classes and is written with JUnit 5. Each test method is named to describe exactly what it is asserting.
 
-- Domain model construction, immutability, and validation
-- Status history and restriction history behaviour
-- Repository save, retrieval, overwrite, and case sensitivity
-- Management service happy paths and all rejection scenarios
-- Audit records for both successful and rejected operations
-- Verification responses for all five organisation types
-- Tax authority suspension period overlap detection including boundary cases
-- Timezone-safe date handling using UTC consistently
+**`DigitalIDTest`** covers domain model construction, immutable field enforcement, blank and null input validation, status history behaviour, restriction history with expiry logic, and the transition rules on `DigitalIDStatus`.
 
-Tests are written using JUnit 5 with `@BeforeEach` setup and descriptive method names that clearly state what each test verifies.
+**`IdentityRepositoryTest`** covers save and retrieval, overwrite behaviour, case sensitivity, empty repository handling, and `findAll`.
 
----
+**`ManagementServiceTest`** covers every happy path and every rejection scenario across all four operations, including audit records produced by both successful and failed operations.
 
-## Architecture Diagram
-
-```text
-                       +----------------------+
-                       |  Central Authority   |
-                       +----------+-----------+
-                                  |
-                                  v
-                        +-------------------+
-                        | ManagementService |
-                        +---------+---------+
-                                  |
-                 +----------------+----------------+
-                 |                                 |
-                 v                                 v
-      +----------------------+          +-------------------+
-      | IdentityRepository   |          |     AuditLog      |
-      +----------+-----------+          +-------------------+
-                 |
-                 v
-          +-------------+
-          | DigitalID   |
-          +-------------+
-
-                       +----------------------+
-                       | Consuming Orgs       |
-                       | (Employer/Bank/etc.) |
-                       +----------+-----------+
-                                  |
-                                  v
-                        +-------------------+
-                        | VerificationService|
-                        +---------+---------+
-                                  |
-                 +----------------+----------------+
-                 |                                 |
-                 v                                 v
-      +----------------------+          +-------------------+
-      | IdentityRepository   |          |     AuditLog      |
-      +----------------------+          +-------------------+
-```
+**`VerificationServiceTest`** covers all five organisation types, tax authority period overlap detection including boundary cases, and UTC-consistent date handling to prevent timezone-related failures.
