@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class AuditLog {
+public class AuditLog implements AuditRecorder {
     private final List<AuditEvent> events = new ArrayList<>();
 
     public void record(String action, String details) {

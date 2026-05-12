@@ -179,6 +179,21 @@ public class Main {
                 new VerificationRequest("ID-1003", OrganisationType.EMPLOYER, null, null)
         ));
 
+        System.out.println("Suspending ID-1001 temporarily to show employer response for suspended identity...");
+        management.changeStatus("ID-1001", DigitalIDStatus.SUSPENDED, OrganisationType.CENTRAL_AUTHORITY);
+        System.out.println("EMPLOYER verifying suspended identity ID-1001...");
+        printResult(verification.verify(
+                new VerificationRequest("ID-1001", OrganisationType.EMPLOYER, null, null)
+        ));
+
+        System.out.println("BANK verifying suspended identity ID-1001...");
+        printResult(verification.verify(
+                new VerificationRequest("ID-1001", OrganisationType.BANK, null, null)
+        ));
+
+        System.out.println("Reinstating ID-1001...");
+        management.changeStatus("ID-1001", DigitalIDStatus.ACTIVE, OrganisationType.CENTRAL_AUTHORITY);
+
         // SECTION 6 : VERIFICATION: DRIVING LICENCE AUTHORITY
         printHeader("SECTION 6 : VERIFICATION: DRIVING LICENCE AUTHORITY");
 
@@ -198,8 +213,22 @@ public class Main {
                 new VerificationRequest("ID-1002", OrganisationType.DRIVING_LICENCE_AUTHORITY, null, null)
         ));
 
+        System.out.println("Suspending ID-1001 to show DRIVING_LICENCE_AUTHORITY response for inactive identity...");
+        management.changeStatus("ID-1001", DigitalIDStatus.SUSPENDED, OrganisationType.CENTRAL_AUTHORITY);
+        System.out.println("DRIVING_LICENCE_AUTHORITY verifying suspended identity ID-1001...");
+        printResult(verification.verify(
+                new VerificationRequest("ID-1001", OrganisationType.DRIVING_LICENCE_AUTHORITY, null, null)
+        ));
+
+        System.out.println("Reinstating ID-1001...");
+        management.changeStatus("ID-1001", DigitalIDStatus.ACTIVE, OrganisationType.CENTRAL_AUTHORITY);
+
         // SECTION 7 : VERIFICATION: TAX AUTHORITY
         printHeader("SECTION 7 : VERIFICATION: TAX AUTHORITY");
+
+        management.createIdentity("ID-2001", "Diana Chen",
+                LocalDate.of(1982, 5, 30), OrganisationType.CENTRAL_AUTHORITY);
+        System.out.println("Created: ID-2001 | Diana Chen | DOB: 1982-05-30\n");
 
         System.out.println("Creating a suspension that overlaps the reporting period boundary...");
         management.changeStatus("ID-1001", DigitalIDStatus.SUSPENDED, OrganisationType.CENTRAL_AUTHORITY);
@@ -267,6 +296,8 @@ public class Main {
 
         // SECTION 10 : FULL AUDIT LOG
         printHeader("SECTION 10 : FULL AUDIT LOG");
+
+        System.out.println("Total identities in system: " + repository.findAll().size() + "\n");
 
         System.out.println("Every action recorded throughout this demonstration:\n");
         auditLog.printAll();
