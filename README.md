@@ -58,7 +58,7 @@ mvn compile
 java -cp target/classes com.digitalid.Main
 ```
 
-The coverage report is generated at `target/site/jacoco/index.html` after running `mvn verify` and shows the coverage for each branch and etc.
+The coverage report is generated at `target/site/jacoco/index.html` after running `mvn verify` and shows the coverage for each branch etc.
 
 ---
 
@@ -138,13 +138,13 @@ Both services share a single `IdentityRepository` and a single `AuditLog`. There
 
 ## Status Transitions
 
-| From | To | Permitted |
-|---|---|---|
-| ACTIVE | SUSPENDED | Yes |
-| ACTIVE | REVOKED | Yes |
-| SUSPENDED | ACTIVE | Yes |
-| SUSPENDED | REVOKED | Yes |
-| REVOKED | Anything | No |
+| From      | To        | Permitted |
+|-----------|-----------|-----------|
+| ACTIVE    | SUSPENDED | Yes       |
+| ACTIVE    | REVOKED   | Yes       |
+| SUSPENDED | ACTIVE    | Yes       |
+| SUSPENDED | REVOKED   | Yes       |
+| REVOKED   | Anything  | No        |
 
 REVOKED is a terminal state. Requesting the same status that is already set is handled gracefully as a no-op, logged as `CHANGE_STATUS_NO_OP`, and does not add an entry to the status history. All invalid transitions throw an `IllegalStateException` and are recorded in the audit log.
 
@@ -152,13 +152,13 @@ REVOKED is a terminal state. Requesting the same status that is already set is h
 
 ## Verification Behaviour by Organisation Type
 
-| Organisation | Checks Performed | Response |
-|---|---|---|
-| EMPLOYER | Exists, ACTIVE | valid true/false, no detail |
-| BANK | Exists, ACTIVE | valid true/false, no detail |
-| DRIVING_LICENCE_AUTHORITY | Exists, ACTIVE, not restricted | valid + ReasonCode |
-| TAX_AUTHORITY | Exists, ACTIVE, not suspended during period | valid + ReasonCode |
-| CENTRAL_AUTHORITY | Not permitted | SecurityException |
+| Organisation              | Checks Performed                            | Response                    |
+|---------------------------|---------------------------------------------|-----------------------------|
+| EMPLOYER                  | Exists, ACTIVE                              | valid true/false, no detail |
+| BANK                      | Exists, ACTIVE                              | valid true/false, no detail |
+| DRIVING_LICENCE_AUTHORITY | Exists, ACTIVE, not restricted              | valid + ReasonCode          |
+| TAX_AUTHORITY             | Exists, ACTIVE, not suspended during period | valid + ReasonCode          |
+| CENTRAL_AUTHORITY         | Not permitted                               | SecurityException           |
 
 ---
 
@@ -170,7 +170,7 @@ The project brief requires these to be treated as distinct capabilities, and thi
 
 ### Transition Logic on the Enum
 
-Each `DigitalIDStatus` constant implements its own `canTransitionTo` method. This keeps all transition rules in one place. The service layer does not need to know what is or is not a valid transition,  it simply asks the current status. A practical benefit of this approach is that if a new status value is introduced in future, the compiler requires its transition rules to be explicitly defined before the code will build.
+Each `DigitalIDStatus` constant implements its own `canTransitionTo` method. This keeps all transition rules in one place. The service layer does not need to know what is or is not a valid transition,  it simply asks the current status. A practical benefit of this approach is that if a new status value is introduced in the future, the compiler requires its transition rules to be explicitly defined before the code will build.
 
 The no-op case, where the same status is requested again, is handled separately in the service rather than in `canTransitionTo`. This keeps the method's meaning precise: it only describes genuine state changes.
 
